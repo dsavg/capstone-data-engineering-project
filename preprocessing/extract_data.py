@@ -1,7 +1,7 @@
 # fetch reddit data
 import os
 import json
-from RedditRequest import SubredditAPI
+from request_reddit_data import SubredditAPI
 from datetime import datetime, timezone
 
 

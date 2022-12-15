@@ -1,1 +1,2 @@
-# udacity-capstone-h1b-salary
+# Capstone project for Udacity's Data Engineering Nanodegree
+Project is work in progress, stay tuned...

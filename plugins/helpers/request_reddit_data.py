@@ -2,19 +2,26 @@
 
 source code: https://towardsdatascience.com/how-to-use-the-reddit-api-in-python-5e05ddfd1e5c
 """
+import os
 import requests
-import reddit_creds
+from airflow.models import Variable
+
+# GET Reddit configs from Airflow environment
+reddit_client_id = Variable.get('reddit_client_id')
+reddit_client_secret = Variable.get('reddit_client_secret')
+reddit_username = Variable.get('reddit_username')
+reddit_password = Variable.get('reddit_password')
 
 
 class SubredditAPI():
     """Class to connect to Reddit API and request data."""
-    client_id = reddit_creds.client_id
-    client_secret = reddit_creds.client_secret
+    client_id = reddit_client_id
+    client_secret = reddit_client_secret
     headers = {'User-Agent': 'MyBot/0.0.1'}
     data = {
         'grant_type': 'password',
-        'username': reddit_creds.username,
-        'password': reddit_creds.password}
+        'username': reddit_username,
+        'password': reddit_password}
 
 
     def __init__(self):

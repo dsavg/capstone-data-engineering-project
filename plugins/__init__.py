@@ -9,7 +9,8 @@ import helpers
 class RedditPlugin(AirflowPlugin):
     name = "reddit_plugin"
     operators = [
-        operators.RedditΤoS3Operator
+        operators.RedditΤoS3Operator,
+        operators.S3PartitionCheck
     ]
     helpers = [
         helpers.SubredditAPI

@@ -5,7 +5,18 @@ Project is work in progress, stay tuned...
 TO DO
 
 ## 2. Table of Content
-TO DO
+[3. Set up](https://github.com/dsavg/capstone-data-engineering-project#3-set-up)  
+[3.1. Amazon Web Servises](https://github.com/dsavg/capstone-data-engineering-project#31-amazon-web-servises)  
+[3.2. Reddit API](https://github.com/dsavg/capstone-data-engineering-project#32-reddit-api)  
+[3.3. Airflow (v2.3.0) ](https://github.com/dsavg/capstone-data-engineering-project#33-airflow-v230)  
+[4. Data Warehouse](https://github.com/dsavg/capstone-data-engineering-project#4-data-warehouse)  
+[4.1. DAGs](https://github.com/dsavg/capstone-data-engineering-project#41-dags)  
+[4.1.1. reddit_get_api_data](https://github.com/dsavg/capstone-data-engineering-project#411-reddit_get_api_data)  
+[4.1.2. reddit_processing_dag](https://github.com/dsavg/capstone-data-engineering-project#412-reddit_processing_dag)  
+[4.1.3. reddit_dwr_dag](https://github.com/dsavg/capstone-data-engineering-project#413-reddit_dwr_dag)  
+[4.2. Custom Operators](https://github.com/dsavg/capstone-data-engineering-project#42-custom-operators)  
+[5. Data Model](https://github.com/dsavg/capstone-data-engineering-project#5-data-model)  
+[6. Resources](https://github.com/dsavg/capstone-data-engineering-project#resources)
 
 ## 3. Set up
 ### 3.1. Amazon Web Servises
@@ -92,7 +103,7 @@ The Dag reads the Reddit JSON logs from AWS S3, unnests all wanted fields using 
 ##### Graph
 ![img4](imgs/reddit_processing_dag.png)
 
-#### 4.1.2. reddit_dwr_dag
+#### 4.1.3. reddit_dwr_dag
 TO DO
 
 ### 4.2. Custom Operators
@@ -102,7 +113,7 @@ TO DO
 
 ## 5. Data Model
 
-## Resources
+## 6. Resources
 * https://towardsdatascience.com/run-airflow-docker-1b83a57616fb
 * https://www.startdataengineering.com/post/how-to-submit-spark-jobs-to-emr-cluster-from-airflow/
 * https://towardsdatascience.com/how-to-use-the-reddit-api-in-python-5e05ddfd1e5c

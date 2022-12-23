@@ -41,4 +41,7 @@ get_reddit_data = RedditΤoS3Operator(task_id='get_reddit_data',
                                      s3_bucket="reddit-project-data",
                                      s3_key="raw-json-logs")
 
-start_operator >> get_reddit_data
+end_operator = DummyOperator(task_id='end_execution',
+                               dag=dag)
+
+start_operator >> get_reddit_data >> end_operator

@@ -6,6 +6,7 @@ import os
 from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.hooks.S3_hook import S3Hook
+from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.python_operator import PythonOperator
 from airflow.contrib.operators.emr_create_job_flow_operator import EmrCreateJobFlowOperator
 from airflow.contrib.operators.emr_terminate_job_flow_operator import EmrTerminateJobFlowOperator
@@ -37,6 +38,10 @@ dag = DAG('reddit_preprocessing',
           description='Load and transform Reddit data in Redshift with Airflow',
           schedule_interval='0 0 * * *'  # once an day
           )
+
+# Start operator
+start_operator = DummyOperator(task_id='begin_execution',
+                               dag=dag)
 
 # S3 partition check
 reddit_data_sensor = S3PartitionCheck(
@@ -138,9 +143,14 @@ terminate_emr_cluster = EmrTerminateJobFlowOperator(
     dag=dag,
 )
 
+end_operator = DummyOperator(task_id='end_execution',
+                               dag=dag)
+
+start_operator>> \
 reddit_data_sensor >> \
 create_emr_cluster >> \
 script_to_s3 >> \
 step_adder >> \
 step_checker >> \
-terminate_emr_cluster
+terminate_emr_cluster >> \
+end_operator

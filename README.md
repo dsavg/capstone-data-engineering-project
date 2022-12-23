@@ -99,7 +99,7 @@ The Dag gets data from the Reddit API in a JSON format and stores them in AWS S3
 ##### Tasks
 * `begin_execution`: uses the [DummyOperator](https://airflow.apache.org/docs/apache-airflow/2.3.1/_modules/airflow/operators/dummy_operator.html#DummyOperator) operator to indicate the start of the DAG.
 * `get_reddit_data`: uses the [RedditΤoS3Operator](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/reddit_api.py) custom operator to fetch trending world-news subreddit data and store them in AWS S3 in JSON format.
-* `stop_execution`: uses the [DummyOperator](https://airflow.apache.org/docs/apache-airflow/2.3.1/_modules/airflow/operators/dummy_operator.html#DummyOperator) operator to indicate the end of the DAG.
+* `end_execution`: uses the [DummyOperator](https://airflow.apache.org/docs/apache-airflow/2.3.1/_modules/airflow/operators/dummy_operator.html#DummyOperator) operator to indicate the end of the DAG.
 
 #### 4.1.2. reddit_processing_dag
 ##### Overview
@@ -115,7 +115,7 @@ The Dag reads the Reddit JSON logs from AWS S3, unnests all wanted fields using 
 * `add_steps`: uses the [EmrAddStepsOperator](https://airflow.apache.org/docs/apache-airflow-providers-amazon/stable/_modules/airflow/providers/amazon/aws/operators/emr.html#EmrAddStepsOperator) operator to exectute the [s3_to_parquet.py](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/helpers/s3_to_parquet.py) on the EMR cluster.
 * `watch_step`: uses the [EmrStepSensor](https://airflow.apache.org/docs/apache-airflow/1.10.13/_modules/airflow/contrib/sensors/emr_step_sensor.html) operator to wait the prior EMR steps to complete.
 * `terminate_emr_cluster`: uses the [EmrTerminateJobFlowOperator](https://airflow.apache.org/docs/apache-airflow/1.10.14/_modules/airflow/contrib/operators/emr_terminate_job_flow_operator.html) operator to terminate the EMR cluster created earlier.
-* `stop_execution`: uses the [DummyOperator](https://airflow.apache.org/docs/apache-airflow/2.3.1/_modules/airflow/operators/dummy_operator.html#DummyOperator) operator to indicate the end of the DAG.
+* `end_execution`: uses the [DummyOperator](https://airflow.apache.org/docs/apache-airflow/2.3.1/_modules/airflow/operators/dummy_operator.html#DummyOperator) operator to indicate the end of the DAG.
 
 #### 4.1.3. reddit_dwr_dag
 ##### Overview
@@ -125,7 +125,7 @@ TO DO
 ##### Tasks
 * `begin_execution`: uses the [DummyOperator](https://airflow.apache.org/docs/apache-airflow/2.3.1/_modules/airflow/operators/dummy_operator.html#DummyOperator) operator to indicate the start of the DAG.
 
-* `stop_execution`: uses the [DummyOperator](https://airflow.apache.org/docs/apache-airflow/2.3.1/_modules/airflow/operators/dummy_operator.html#DummyOperator) operator to indicate the end of the DAG.
+* `end_execution`: uses the [DummyOperator](https://airflow.apache.org/docs/apache-airflow/2.3.1/_modules/airflow/operators/dummy_operator.html#DummyOperator) operator to indicate the end of the DAG.
 
 ### 4.2. Custom Operators
 [RedditΤoS3Operator](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/reddit_api.py): Operator to get API Reddit data and store them in S3 in JSON format.

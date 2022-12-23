@@ -1,8 +1,8 @@
-"""
+"""Define a SubredditAPI module using the Reddit API to collect subreddits.
 
-source code: https://towardsdatascience.com/how-to-use-the-reddit-api-in-python-5e05ddfd1e5c
+The data is return in a JSON format.
+Source Code: https://towardsdatascience.com/how-to-use-the-reddit-api-in-python-5e05ddfd1e5c
 """
-import os
 import requests
 from airflow.models import Variable
 
@@ -15,6 +15,7 @@ reddit_password = Variable.get('reddit_password')
 
 class SubredditAPI():
     """Class to connect to Reddit API and request data."""
+
     client_id = reddit_client_id
     client_secret = reddit_client_secret
     headers = {'User-Agent': 'MyBot/0.0.1'}
@@ -22,7 +23,6 @@ class SubredditAPI():
         'grant_type': 'password',
         'username': reddit_username,
         'password': reddit_password}
-
 
     def __init__(self):
         """
@@ -47,7 +47,8 @@ class SubredditAPI():
         Get response from Reddit API.
 
         :param name: subreddit name (str)
-        :param type: subreddit type (str). Use `hot` for most popular and `new` for most recent
+        :param type: subreddit type (str).
+            Use `hot` for most popular and `new` for most recent
         :return: json object holding request response from Reddit
         """
         self.params = {'limit': limit}
@@ -62,8 +63,8 @@ class SubredditAPI():
         # convert response to JSON and pull access_token value
         self.__token = self.__request.json()['access_token']
         # add authorization to our headers dictionary
-        self.__headers = {**self.headers, **{'Authorization': f"bearer {self.__token}"}}
-
+        self.__headers = {**self.headers,
+                          **{'Authorization': f"bearer {self.__token}"}}
         return (requests.get(f"https://oauth.reddit.com/r/{subreddit_name}/{subreddit_type}",
                              headers=self.__headers,
                              params=self.params,

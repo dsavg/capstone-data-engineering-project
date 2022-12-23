@@ -1,12 +1,12 @@
-"""Sparkfy Dag to populate fact and dimension tables and quality check them."""
+"""
+Dag to request Reddit data from API and store them in S3 in JSON format.
+"""
 
 import os
 from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.hooks.S3_hook import S3Hook
 from airflow.operators.python_operator import PythonOperator
-from airflow.operators.dummy_operator import DummyOperator
-from airflow.operators.postgres_operator import PostgresOperator
 from airflow.contrib.operators.emr_create_job_flow_operator import EmrCreateJobFlowOperator
 from airflow.contrib.operators.emr_terminate_job_flow_operator import EmrTerminateJobFlowOperator
 from airflow.contrib.operators.emr_add_steps_operator import EmrAddStepsOperator

@@ -1,4 +1,6 @@
-"""Sparkfy Dag to populate fact and dimension tables and quality check them."""
+"""
+Dag to pre-process Reddit data using PySpark, and store them in parquet format on S3.
+"""
 
 import os
 from datetime import datetime, timedelta

@@ -1,5 +1,13 @@
-# pyspark
-import logging
+"""Read data from S3, transform in PySpark on EMR, and store them back in S3.
+
+The code is copied to S3 and executed from there on EMR, with the following
+responsibilities,
+- Create a SparkSession
+- Read data from S3, in JSON format
+- Unnest columns specified in all_fields
+- Add the date field, indicating the date of data retrieval from JSON
+- Write data to S3 in parquet. Overwrite, if partition already exist
+"""
 import argparse
 from pyspark.sql import SparkSession
 
@@ -47,27 +55,25 @@ all_fields = (
     "data.url"
 )
 
-def transform_load_data(spark, input_data, output_data, dt):
+
+def transform_load_data(spark, input_data, output_data, ds):
     """
     Process raw json  data.
 
-    Read song data from json logs stored in s3.
-    Write `songs` and `artists` dimension tables to parquet
-    files, using PySpark.
-
+    Read reddit data from json logs stored in s3.
+    Write processed reddit data to parquet files, using PySpark.
     :param spark: SparkSession object
     :param input_data: s3 file path for input data
     :param output_data: s3 file path for output data
+    :param dt: snapshot date
     """
     # read raw reddit data json file
     reddit_df = spark.read.json(input_data)
-
     # extract columns to create table
     reddit_requests_table = (reddit_df
                              .selectExpr(*all_fields,
-                                         f"'{dt}' AS date")
+                                         f"'{ds}' AS date")
                              .dropDuplicates())
-
     # write songs table to parquet files partitioned by year and artist
     (reddit_requests_table
      .write
@@ -76,8 +82,9 @@ def transform_load_data(spark, input_data, output_data, dt):
      .option("partitionOverwriteMode", "dynamic")
      .parquet(output_data))
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
+    # parse arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("--dt",
                         type=str,
@@ -95,23 +102,22 @@ if __name__ == "__main__":
                         type=str,
                         help="execution year",
                         default="reddit-data/")
-
     args = parser.parse_args()
-    # get parameter
+    # get parameters
     dt = args.dt
     s3_bucket = args.s3_bucket
     input_file_path = args.input_file_path
     output_file_path = args.output_file_path
-
-    spark = (SparkSession
+    # initialize spark session on EMR
+    spark_session = (SparkSession
              .builder
              .appName("From S3 to parquet")
              .getOrCreate())
-
+    # s3 input/output paths
     s3_input_data = f's3a://{s3_bucket}/{input_file_path}'
     s3_output_data = f's3a://{s3_bucket}/{output_file_path}'
-
-    transform_load_data(spark,
+    # execute transformation function
+    transform_load_data(spark_session,
                         s3_input_data,
                         s3_output_data,
                         dt)

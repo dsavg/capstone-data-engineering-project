@@ -23,7 +23,6 @@ class RedditΤoS3Operator(BaseOperator):
 
     """
     ui_color = '#89DA59'
-    template_fields = ("s3_key",)
 
     @apply_defaults
     def __init__(self,

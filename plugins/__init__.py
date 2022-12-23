@@ -13,5 +13,6 @@ class RedditPlugin(AirflowPlugin):
         operators.S3PartitionCheck
     ]
     helpers = [
-        helpers.SubredditAPI
+        helpers.SubredditAPI,
+        helpers.JOB_FLOW_OVERRIDES
     ]

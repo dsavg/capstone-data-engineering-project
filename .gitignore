@@ -130,5 +130,9 @@ dmypy.json
 
 # Additional ignores
 reddit_creds.py
+aws_creds.py
+dwh.cfg
+docker-compose.yaml
 .DS_Store
 .idea/*
+logs/*

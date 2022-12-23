@@ -21,7 +21,7 @@ class S3PartitionCheck(BaseOperator):
 
     """
     ui_color = '#DA5984'
-    template_fields = ("s3_key",)
+    template_fields = ("ds",)
 
     @apply_defaults
     def __init__(self,
@@ -30,6 +30,7 @@ class S3PartitionCheck(BaseOperator):
                  aws_credentials_id: str = "",
                  s3_bucket: str = "",
                  s3_key: str = "",
+                 my_test: str = "",
                  *args, **kwargs) -> None:
         """
 
@@ -50,6 +51,7 @@ class S3PartitionCheck(BaseOperator):
         self.s3_bucket = s3_bucket
         self.s3_key = s3_key
         self.ds = kwargs['params']['end_date']
+        self.my_test = my_test
 
 
     def execute(self, context) -> None:
@@ -59,6 +61,7 @@ class S3PartitionCheck(BaseOperator):
         :return:
         """
         # connect to AWS
+        self.log.info(self.my_test)
         self.log.info("Connect to AWS")
         aws_hook = AwsBaseHook(self.aws_credentials_id, client_type='s3')
         credentials = aws_hook.get_credentials()

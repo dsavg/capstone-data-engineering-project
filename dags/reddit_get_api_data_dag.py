@@ -35,7 +35,7 @@ default_args = {
 
 dag = DAG('reddit_preprocessing',
           default_args=default_args,
-          description='Load and transform Reddit data in Redshift with Airflow',
+          description='Process Reddit JSON logs with PySpark on EMR and store them on S3 in parquet format with Airflow.',
           schedule_interval='0 0 * * *'  # once an day
           )
 

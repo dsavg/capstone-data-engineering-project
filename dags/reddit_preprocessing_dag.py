@@ -25,7 +25,7 @@ default_args = {
 
 dag = DAG('reddit_get_api_data',
           default_args=default_args,
-          description='Get top wordlnews subreddits, from Reddit API',
+          description='Fetch top wordlnews subreddits data from Reddit API and load them to S3 with Airflow.',
           schedule_interval='0 0 * * *'  # once an day
           )
 

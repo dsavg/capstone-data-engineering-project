@@ -10,7 +10,9 @@ class RedditPlugin(AirflowPlugin):
     name = "reddit_plugin"
     operators = [
         operators.RedditΤoS3Operator,
-        operators.S3PartitionCheck
+        operators.S3PartitionCheck,
+        operators.StageToRedshiftOperator,
+        operators.DataTesting
     ]
     helpers = [
         helpers.SubredditAPI,

@@ -11,7 +11,7 @@ responsibilities,
 import argparse
 from pyspark.sql import SparkSession
 
-template_fields = ("ds",)
+# template_fields = ("ds",)
 
 all_fields = (
 
@@ -60,12 +60,12 @@ def transform_load_data(spark, input_data, output_data, ds):
     """
     Process raw json  data.
 
-    Read reddit data from json logs stored in s3.
-    Write processed reddit data to parquet files, using PySpark.
+    Read Reddit data from json logs stored in s3.
+    Write processed Reddit data to parquet files, using PySpark.
     :param spark: SparkSession object
     :param input_data: s3 file path for input data
     :param output_data: s3 file path for output data
-    :param dt: snapshot date
+    :param ds: snapshot date
     """
     # read raw reddit data json file
     reddit_df = spark.read.json(input_data)

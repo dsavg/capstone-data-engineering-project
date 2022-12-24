@@ -4,14 +4,16 @@ Dag to request Reddit data from API and store them in S3 in JSON format.
 
 import os
 from datetime import datetime, timedelta
+
 from airflow import DAG
 from airflow.hooks.S3_hook import S3Hook
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.python_operator import PythonOperator
 from airflow.contrib.operators.emr_create_job_flow_operator import EmrCreateJobFlowOperator
-from airflow.contrib.operators.emr_terminate_job_flow_operator import EmrTerminateJobFlowOperator
 from airflow.contrib.operators.emr_add_steps_operator import EmrAddStepsOperator
 from airflow.contrib.sensors.emr_step_sensor import EmrStepSensor
+from airflow.contrib.operators.emr_terminate_job_flow_operator import EmrTerminateJobFlowOperator
+
 from operators import S3PartitionCheck
 from helpers import JOB_FLOW_OVERRIDES
 
@@ -104,7 +106,7 @@ SPARK_STEPS = [
     },
 ]
 
-dt = '2022-12-22' # TO DO: remove hardcoded value here
+dt = '2022-12-24' # TO DO: remove hardcoded value here
 # Add your steps to the EMR cluster
 step_adder = EmrAddStepsOperator(
     dag=dag,

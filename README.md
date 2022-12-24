@@ -18,6 +18,9 @@ TO DO
 [5. Data Model](https://github.com/dsavg/capstone-data-engineering-project#5-data-model)  
 [6. Resources](https://github.com/dsavg/capstone-data-engineering-project#resources)
 
+## Datawarehouse Architecture
+![img0](imgs/datawarehouse_architecture.png)
+
 ## 3. Set up
 ### 3.1. Amazon Web Servises
 * Create an IAM Role on AWS with the following attached policies [link](https://docs.aws.amazon.com/IAM/latest/UserGuide/intro-structure.html),
@@ -69,10 +72,10 @@ docker-compose up
 8. When the docker container is up and running, you will need to create the following connections and variables in the Airflow environment.  
     
     **Variables**
-    ![img0](imgs/airflow_variables.png)
+    ![img1](imgs/airflow_variables.png)
 
     **Connections**
-    ![img1](imgs/airflow_connections.png)
+    ![img2](imgs/airflow_connections.png)
     * Connection Id = **aws_credentials**   
     Connection Type = Amazon Web Services   
     Login = {{`Access key ID`}}   

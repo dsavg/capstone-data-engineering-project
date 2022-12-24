@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS {{params.schema_name}}.creators_snapshot
 (
-    creator_id VARCHAR(256),
+    creator_id VARCHAR(256) NOT NULL,
     name VARCHAR(256),
     is_blocked BOOLEAN,
     snapshot_date varchar(256)
@@ -16,6 +16,6 @@ INSERT INTO {{params.schema_name}}.creators_snapshot
         author_is_blocked AS is_blocked,
         '{{params.dt}}' AS snapshot_date
     FROM {{params.schema_name}}.reddit_logs
-    where snapshot_date = '{{params.dt}}'
+    WHERE snapshot_date = '{{params.dt}}'
     GROUP BY 1, 2, 3
 );

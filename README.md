@@ -4,7 +4,8 @@ Project is work in progress, stay tuned...
 ## 1. Overview
 TO DO
 
-## 2. Table of Content
+## Table of Content
+[2. Datawarehouse Architecture]()
 [3. Set up](https://github.com/dsavg/capstone-data-engineering-project#3-set-up)  
 [3.1. Amazon Web Servises](https://github.com/dsavg/capstone-data-engineering-project#31-amazon-web-servises)  
 [3.2. Reddit API](https://github.com/dsavg/capstone-data-engineering-project#32-reddit-api)  
@@ -18,7 +19,7 @@ TO DO
 [5. Data Model](https://github.com/dsavg/capstone-data-engineering-project#5-data-model)  
 [6. Resources](https://github.com/dsavg/capstone-data-engineering-project#resources)
 
-## Datawarehouse Architecture
+## 2. Datawarehouse Architecture
 ![img0](imgs/datawarehouse_architecture.png)
 
 ## 3. Set up
@@ -30,6 +31,7 @@ TO DO
     
     Save the `Access key ID` and `Secret access key` to use in Airflow later.
 * Create an S3 bucket named `reddit-project-data`.
+* Create a Redshift cluster on AWS, which it publicly accessible and enhanced VPC routing.
 
 ### 3.2. Reddit API
 Follow the [How to Use the Reddit API in Python](https://towardsdatascience.com/how-to-use-the-reddit-api-in-python-5e05ddfd1e5c) post to set up your credentials for the Reddit API. Ones you've done that, you will need the save the 
@@ -86,6 +88,9 @@ docker-compose up
     Login = {{`Access key ID`}}   
     Passwork = {{`Secret access key`}}  
     Extra = {"region_name": "us-west-2"}
+    
+    * Redshift connection
+    ![img3](imgs/redshift_cluster_connection.png)
 
 9. When done with this project, you can go ahead and stop and delete all running containers
 ```
@@ -112,7 +117,7 @@ The Dag reads the Reddit JSON logs from AWS S3, unnests all wanted fields using 
 
 ##### Tasks
 * `begin_execution`: uses the [DummyOperator](https://airflow.apache.org/docs/apache-airflow/2.3.1/_modules/airflow/operators/dummy_operator.html#DummyOperator) operator to indicate the start of the DAG.
-* `reddit_s3_data_sensor`: uses the [S3PartitionCheck](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/s3_partition_check.py) custom operator to check is the date partition exists in S3. The task fails and retries if data does not exist. 
+* `reddit_s3_data_sensor`: uses the [S3PartitionCheck](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/s3_partition_check.py) custom operator to check if the date partition exists in S3. The task fails and retries if data does not exist. 
 * `create_emr_cluster`: uses the [EmrCreateJobFlowOperator](https://airflow.apache.org/docs/apache-airflow-providers-amazon/stable/_modules/airflow/providers/amazon/aws/operators/emr.html#EmrCreateJobFlowOperator) operator to create an EMR cluster in AWS with [JOB_FLOW_OVERRIDES](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/helpers/emr_utils.py) settings.
 * `script_to_s3`: uses the [PythonOperator](https://airflow.apache.org/docs/apache-airflow/stable/_modules/airflow/operators/python.html#PythonOperator) operator to copy the [s3_to_parquet.py](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/helpers/s3_to_parquet.py) pySpark script to s3 to execute on EMR.
 * `add_steps`: uses the [EmrAddStepsOperator](https://airflow.apache.org/docs/apache-airflow-providers-amazon/stable/_modules/airflow/providers/amazon/aws/operators/emr.html#EmrAddStepsOperator) operator to exectute the [s3_to_parquet.py](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/helpers/s3_to_parquet.py) on the EMR cluster.
@@ -122,18 +127,33 @@ The Dag reads the Reddit JSON logs from AWS S3, unnests all wanted fields using 
 
 #### 4.1.3. reddit_dwr_dag
 ##### Overview
-TO DO
+The Dag load and transform Reddit data in Redshift with Airflow.
 ##### Graph
-TO DO
+![img5](imgs/reddit_dwr_dag.png)
 ##### Tasks
 * `begin_execution`: uses the [DummyOperator](https://airflow.apache.org/docs/apache-airflow/2.3.1/_modules/airflow/operators/dummy_operator.html#DummyOperator) operator to indicate the start of the DAG.
-
+* `reddit_data_sensor`: uses the [S3PartitionCheck](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/s3_partition_check.py) custom operator that to check if the data partition exists in S3. The task fails and retries if data does not exist.
+* `create_reddit_schema`: uses the [PostgresOperator](https://airflow.apache.org/docs/apache-airflow-providers-postgres/stable/operators/postgres_operator_howto_guide.html) operator that executes the [dags/resources/create_schema.sql](https://github.com/dsavg/capstone-data-engineering-project/blob/master/dags/resources/create_schema.sql) query to create the `reddit` schema, if it does not already exist.
+* `create_stagging_table`: uses the [PostgresOperator](https://airflow.apache.org/docs/apache-airflow-providers-postgres/stable/operators/postgres_operator_howto_guide.html) operator that executes the [dags/resources/create_stagging_table.sql](https://github.com/dsavg/capstone-data-engineering-project/blob/master/dags/resources/create_stagging_table.sql) query to to create the `reddit.staging_reddit_logs` table.
+* `stage_reddit_data`: uses the [StageToRedshiftOperator](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/stage_redshift.py) custom operator to copy the parquet logs to Redshift.
+* `load_reddit_data`: uses the [PostgresOperator](https://airflow.apache.org/docs/apache-airflow-providers-postgres/stable/operators/postgres_operator_howto_guide.html) operator that executes the [dags/resources/reddit_logs.sql](https://github.com/dsavg/capstone-data-engineering-project/blob/master/dags/resources/reddit_logs.sql) query to create the `reddit.reddit_logs` table.
+* `load_fact_table`: uses the [PostgresOperator](https://airflow.apache.org/docs/apache-airflow-providers-postgres/stable/operators/postgres_operator_howto_guide.html) operator that executes the [dags/resources/resources/fact_table.sql](https://github.com/dsavg/capstone-data-engineering-project/blob/master/dags/resources/fact_table.sql) query to create the `reddit.reddit_fact` table. query to
+* `load_creator_snapshot`: uses the [PostgresOperator](https://airflow.apache.org/docs/apache-airflow-providers-postgres/stable/operators/postgres_operator_howto_guide.html) operator that executes the [dags/resources/creators_snapshot.sql](https://github.com/dsavg/capstone-data-engineering-project/blob/master/dags/resources/creators_snapshot.sql) query to create the `reddit.creators_snapshot` table.
+* `load_creator_dimension`: uses the [PostgresOperator](https://airflow.apache.org/docs/apache-airflow-providers-postgres/stable/operators/postgres_operator_howto_guide.html) operator that executes the [dags/resources/creators_dimension.sql](https://github.com/dsavg/capstone-data-engineering-project/blob/master/dags/resources/creators_dimension.sql) query to create the `reddit.creators_d` table.
+* `load_posts_snapshot`: uses the [PostgresOperator](https://airflow.apache.org/docs/apache-airflow-providers-postgres/stable/operators/postgres_operator_howto_guide.html) operator that executes the [dags/resources/posts_snapshot.sql](https://github.com/dsavg/capstone-data-engineering-project/blob/master/dags/resources/posts_snapshot.sql) query to create the `reddit.post_snapshot` table.
+* `load_posts_dimension`: uses the [PostgresOperator](https://airflow.apache.org/docs/apache-airflow-providers-postgres/stable/operators/postgres_operator_howto_guide.html) operator that executes the [dags/resources/posts_dimension.sql](https://github.com/dsavg/capstone-data-engineering-project/blob/master/dags/resources/posts_dimension.sql) query to create the `reddit.post_d` table.
+* `load_subreddit_snapshot`: uses the [PostgresOperator](https://airflow.apache.org/docs/apache-airflow-providers-postgres/stable/operators/postgres_operator_howto_guide.html) operator that executes the [dags/resources/subreddit_snapshot.sql](https://github.com/dsavg/capstone-data-engineering-project/blob/master/dags/resources/subreddit_snapshot.sql) query to create the `reddit.subreddit_snapshot` table.
+* `load_subreddit_dimension`: uses the [PostgresOperator](https://airflow.apache.org/docs/apache-airflow-providers-postgres/stable/operators/postgres_operator_howto_guide.html) operator that executes the [dags/resources/subreddit_dimension.sql](https://github.com/dsavg/capstone-data-engineering-project/blob/master/dags/resources/subreddit_dimension.sql) query to create the `reddit.subreddit_d` table.
+* `fact_table_quality_checks`: uses the [DataQualityOperator](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/data_quality.py) operator that ensures no Null values for primary keys and more than 0 records on tables.
+* `creator_dimension_table_quality_checks`: uses the [DataQualityOperator](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/data_quality.py) custom operator that ensures no Null values for primary keys and more than 0 records on tables.
+* `posts_dimension_table_quality_checks`: uses the [DataQualityOperator](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/data_quality.py) custom operator that ensures no Null values for primary keys and more than 0 records on tables.
+* `subreddit_dimension_table_quality_checks`: uses the [DataQualityOperator](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/data_quality.py) custom operator that ensures no Null values for primary keys and more than 0 records on tables.
 * `end_execution`: uses the [DummyOperator](https://airflow.apache.org/docs/apache-airflow/2.3.1/_modules/airflow/operators/dummy_operator.html#DummyOperator) operator to indicate the end of the DAG.
 
 ### 4.2. Custom Operators
-[RedditΤoS3Operator](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/reddit_api.py): Operator to get API Reddit data and store them in S3 in JSON format.
-
-[S3PartitionCheck](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/s3_partition_check.py): Operator to check is date partition exists in S3 path.
+[RedditΤoS3Operator](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/reddit_api.py): Operator to get API Reddit data and store them in S3 in JSON format.  
+[S3PartitionCheck](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/s3_partition_check.py): Operator to check is date partition exists in S3 path.  
+[DataQualityOperator](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/data_quality.py): Operator to check is the data output is as expected. 
 
 ## 5. Data Model
 TO DO

@@ -16,7 +16,7 @@ AWS_SECRET = os.environ.get('AWS_SECRET')
 default_args = {
     'owner': 'danai',
     'depends_on_past': False,
-    'start_date': datetime(2022, 12, 16, 0, 0, 0, 0),
+    'start_date': datetime(2022, 12, 23, 0, 0, 0, 0),
     'retries': 3,
     'retry_delay': timedelta(minutes=5),
     'catchup': False,

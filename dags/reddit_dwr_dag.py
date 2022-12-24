@@ -7,8 +7,7 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.postgres_operator import PostgresOperator
-from operators import StageToRedshiftOperator
-from operators import DataQualityOperator
+from operators import StageToRedshiftOperator, S3PartitionCheck, DataQualityOperator
 
 # Get AWS configs from Airflow environment
 AWS_KEY = os.environ.get('AWS_KEY')
@@ -17,12 +16,12 @@ AWS_SECRET = os.environ.get('AWS_SECRET')
 BUCKET_NAME = "reddit-project-data"
 aws_creds = "aws_default"
 schema_name = 'reddit'
-dt = "2022-12-24"
+dt = "2022-12-24" # TO DO: remove hardcoded value here
 
 default_args = {
     'owner':'danai',
     'depends_on_past':False,
-    'start_date':datetime(2022, 12, 16, 0, 0, 0, 0),
+    'start_date':datetime(2022, 12, 23, 0, 0, 0, 0),
     'retries':3,
     'retry_delay':timedelta(minutes=5),
     'catchup':False,
@@ -42,10 +41,15 @@ start_operator = DummyOperator(
     dag=dag
 )
 
-# TO DO: make sure to update this
-reddit_data_sensor = DummyOperator(
+reddit_data_sensor = S3PartitionCheck(
     task_id='reddit_data_sensor',
-    dag=dag
+    dag=dag,
+    aws_credentials_id=aws_creds,
+    s3_bucket=BUCKET_NAME,
+    s3_key="reddit-data/date= {}/",
+    params={
+        'end_date': '{{ ds }}'
+    }
 )
 
 create_schema = PostgresOperator(
@@ -232,8 +236,8 @@ end_operator = DummyOperator(
 # Build DAG graph
 start_operator >> \
 create_schema >> \
-create_stagging_table >> \
 reddit_data_sensor >> \
+create_stagging_table >> \
 stage_reddit_data >> \
 load_reddit_data
 

@@ -15,8 +15,6 @@ class S3PartitionCheck(BaseOperator):
 
     @apply_defaults
     def __init__(self,
-                 subreddit_name: str = 'worldnews',
-                 subreddit_type: str = 'hot',
                  aws_credentials_id: str = "",
                  s3_bucket: str = "",
                  s3_key: str = "",
@@ -24,21 +22,17 @@ class S3PartitionCheck(BaseOperator):
         """
         Class initialization.
 
-        :param subreddit_name: subreddit name (str)
-        :param subreddit_type: subreddit type (str)
         :param aws_credentials_id: AWS credentials ID read from Airflow (str)
         :param s3_bucket: S3 Bucket name (str)
         :param s3_key: S3 key/folder (str)
         """
         super().__init__(*args, **kwargs)
-        # reddit arguments
-        self.subreddit_name = subreddit_name
-        self.subreddit_type = subreddit_type
         # aws arguments
         self.aws_credentials_id = aws_credentials_id
         self.s3_bucket = s3_bucket
-        self.s3_key = s3_key
+        self.s3_key = s3_key.split('/')[0]
         self.ds = kwargs['params']['end_date']
+        self.input_file_path = s3_key
 
 
     def execute(self, context) -> None:
@@ -53,15 +47,15 @@ class S3PartitionCheck(BaseOperator):
                             aws_secret_access_key=credentials.secret_key
                             )
         s3Bucket = s3.Bucket(self.s3_bucket)
-        # create the S3 file path to check if exists
-        input_file_path = f"{self.s3_key}/reddit-{self.subreddit_name}-" \
-                          f"{self.subreddit_type}-{self.ds}.json"
+        input_file_path = self.input_file_path.format(self.ds)
+        self.log.info(input_file_path)
         # loop through S3 path and check if target path exists
         found = False
         for object_summary in s3Bucket.objects.filter(Prefix=f"{self.s3_key}/"):
-            if object_summary.key == input_file_path:
+            if input_file_path in object_summary.key:
                 self.log.info(f"Bucket Found - s3://{self.s3_bucket}/{input_file_path}")
                 found = True
+                break
         # raise error if bucket is not found
         if not found:
             raise FileNotFoundError(f"Bucket Not Found - s3://{self.s3_bucket}/{input_file_path}")

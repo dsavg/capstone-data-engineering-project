@@ -23,11 +23,12 @@ AWS_SECRET = os.environ.get('AWS_SECRET')
 
 BUCKET_NAME = "reddit-project-data"
 aws_creds = "aws_default"
+dt = '2022-12-24' # TO DO: remove hardcoded value here
 
 default_args = {
     'owner': 'danai',
     'depends_on_past': False,
-    'start_date': datetime(2022, 12, 16, 0, 0, 0, 0),
+    'start_date': datetime(2022, 12, 23, 0, 0, 0, 0),
     'retries': 3,
     'retry_delay': timedelta(minutes=5),
     'catchup': False,
@@ -37,7 +38,8 @@ default_args = {
 
 dag = DAG('reddit_preprocessing',
           default_args=default_args,
-          description='Process Reddit JSON logs with PySpark on EMR and store them on S3 in parquet format with Airflow.',
+          description='Process Reddit JSON logs with PySpark on EMR and '
+                      'store them on S3 in parquet format with Airflow.',
           schedule_interval='0 0 * * *'  # once an day
           )
 
@@ -49,11 +51,9 @@ start_operator = DummyOperator(task_id='begin_execution',
 reddit_data_sensor = S3PartitionCheck(
     task_id='reddit_s3_data_sensor',
     dag=dag,
-    subreddit_name='worldnews',
-    subreddit_type='hot',
     aws_credentials_id=aws_creds,
     s3_bucket=BUCKET_NAME,
-    s3_key="raw-json-logs",
+    s3_key="raw-json-logs/reddit-worldnews-hot-{}.json",
     params={
         'end_date': '{{ ds }}'
     }
@@ -106,7 +106,6 @@ SPARK_STEPS = [
     },
 ]
 
-dt = '2022-12-24' # TO DO: remove hardcoded value here
 # Add your steps to the EMR cluster
 step_adder = EmrAddStepsOperator(
     dag=dag,

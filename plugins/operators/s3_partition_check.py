@@ -20,7 +20,6 @@ class S3PartitionCheck(BaseOperator):
                  aws_credentials_id: str = "",
                  s3_bucket: str = "",
                  s3_key: str = "",
-                 my_test: str = "",
                  *args, **kwargs) -> None:
         """
         Class initialization.
@@ -40,13 +39,11 @@ class S3PartitionCheck(BaseOperator):
         self.s3_bucket = s3_bucket
         self.s3_key = s3_key
         self.ds = kwargs['params']['end_date']
-        self.my_test = my_test
 
 
     def execute(self, context) -> None:
         """Check if a specific date partition exists in S3 path."""
         # connect to AWS and S3
-        self.log.info(self.my_test)
         self.log.info("Connect to AWS")
         aws_hook = AwsBaseHook(self.aws_credentials_id, client_type='s3')
         credentials = aws_hook.get_credentials()

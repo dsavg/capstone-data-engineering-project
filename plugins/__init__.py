@@ -12,7 +12,8 @@ class RedditPlugin(AirflowPlugin):
         operators.RedditΤoS3Operator,
         operators.S3PartitionCheck,
         operators.StageToRedshiftOperator,
-        operators.DataQualityOperator
+        operators.DataQualityOperator,
+        operators.RedshiftOperator
     ]
     helpers = [
         helpers.SubredditAPI,

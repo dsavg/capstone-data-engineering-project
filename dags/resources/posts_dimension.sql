@@ -1,5 +1,3 @@
-DROP TABLE IF EXISTS {{params.schema_name}}.post_d;
-
 CREATE TABLE IF NOT EXISTS {{params.schema_name}}.post_d
 (
     post_id varchar(256)      PRIMARY KEY      SORTKEY,
@@ -53,7 +51,7 @@ INSERT INTO {{params.schema_name}}.post_d
             send_replies,
             row_number() over (partition by post_id order by snapshot_date desc) AS rnk
         FROM {{params.schema_name}}.post_snapshot
-        WHERE snapshot_date = '{{params.dt}}'
+        WHERE snapshot_date = '{{ ds }}'
     )
     WHERE rnk = 1
 );

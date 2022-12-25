@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS {{params.schema_name}}.creators_snapshot
     snapshot_date varchar(256)
 );
 
-DELETE FROM {{params.schema_name}}.creators_snapshot WHERE snapshot_date='{{params.dt}}';
+DELETE FROM {{params.schema_name}}.creators_snapshot WHERE snapshot_date='{{ ds }}';
 
 INSERT INTO {{params.schema_name}}.creators_snapshot
 (
@@ -14,8 +14,8 @@ INSERT INTO {{params.schema_name}}.creators_snapshot
         author_fullname AS creator_id,
         author AS name,
         author_is_blocked AS is_blocked,
-        '{{params.dt}}' AS snapshot_date
+        '{{ ds }}' AS snapshot_date
     FROM {{params.schema_name}}.reddit_logs
-    WHERE snapshot_date = '{{params.dt}}'
+    WHERE snapshot_date = '{{ ds }}'
     GROUP BY 1, 2, 3
 );

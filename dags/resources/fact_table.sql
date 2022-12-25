@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS {{params.schema_name}}.reddit_fact (
 	CONSTRAINT reddit_fact_pkey PRIMARY KEY (creator_id, subreddit_id, post_id)
 );
 
-DELETE FROM {{params.schema_name}}.reddit_fact WHERE dt='{{params.dt}}';
+DELETE FROM {{params.schema_name}}.reddit_fact WHERE dt='{{ ds }}';
 
 INSERT INTO {{params.schema_name}}.reddit_fact
 (
@@ -26,7 +26,7 @@ INSERT INTO {{params.schema_name}}.reddit_fact
         total_awards_received,
         ups,
         upvote_ratio,
-        '{{params.dt}}' AS dt
+        '{{ ds }}' AS dt
     FROM {{params.schema_name}}.reddit_logs
-    WHERE snapshot_date = '{{params.dt}}'
+    WHERE snapshot_date = '{{ ds }}'
 );

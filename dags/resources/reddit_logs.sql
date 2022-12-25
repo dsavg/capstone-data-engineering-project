@@ -41,11 +41,10 @@ CREATE TABLE IF NOT EXISTS {{params.schema_name}}.reddit_logs (
     snapshot_date varchar(256)
 );
 
-DELETE FROM {{params.schema_name}}.reddit_logs WHERE snapshot_date='{{params.dt}}';
+DELETE FROM {{params.schema_name}}.reddit_logs WHERE snapshot_date='{{ ds }}';
 
 INSERT INTO {{params.schema_name}}.reddit_logs
 (
-    SELECT *, '{{params.dt}}' AS snapshot_date
+    SELECT *, '{{ ds }}' AS snapshot_date
     FROM {{params.schema_name}}.staging_reddit_logs
 );
-

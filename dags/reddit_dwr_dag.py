@@ -6,8 +6,8 @@ import os
 from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.dummy_operator import DummyOperator
-from airflow.operators.postgres_operator import PostgresOperator
-from operators import StageToRedshiftOperator, S3PartitionCheck, DataQualityOperator
+from operators import (StageToRedshiftOperator, S3PartitionCheck,
+                       RedshiftOperator, DataQualityOperator)
 
 # Get AWS configs from Airflow environment
 AWS_KEY = os.environ.get('AWS_KEY')
@@ -52,7 +52,7 @@ reddit_data_sensor = S3PartitionCheck(
     }
 )
 
-create_schema = PostgresOperator(
+create_schema = RedshiftOperator(
     task_id='create_reddit_schema',
     dag=dag,
     sql='resources/create_schema.sql',
@@ -64,7 +64,7 @@ create_schema = PostgresOperator(
 )
 
 # Create stagging reddit tables
-create_stagging_table = PostgresOperator(
+create_stagging_table = RedshiftOperator(
     task_id='create_stagging_table',
     dag=dag,
     sql='resources/create_stagging_table.sql',
@@ -87,86 +87,86 @@ stage_reddit_data = StageToRedshiftOperator(
     dt='{{ ds }}'
 )
 
-load_reddit_data = PostgresOperator(
+load_reddit_data = RedshiftOperator(
     task_id='load_reddit_data',
     dag=dag,
     sql='resources/reddit_logs.sql',
     params={
         "schema_name":schema_name,
-        "dt":dt
+        "ds":'{{ ds }}'
     },
     postgres_conn_id="redshift",
     autocommit=True
 )
 
 # Load Fact and Dimension tables
-load_creator_snapshot_table = PostgresOperator(
+load_creator_snapshot_table = RedshiftOperator(
     task_id='load_creator_snapshot',
     dag=dag,
     sql='resources/creators_snapshot.sql',
     params={
         "schema_name":schema_name,
-        "dt":dt
+        "ds":'{{ ds }}'
     },
     postgres_conn_id="redshift",
     autocommit=True
 )
 
-load_creator_dimension_table = PostgresOperator(
+load_creator_dimension_table = RedshiftOperator(
     task_id='load_creator_dimension',
     dag=dag,
     sql='resources/creators_dimension.sql',
     params={
         "schema_name":schema_name,
-        "dt":dt
+        "ds":'{{ ds }}'
     },
     postgres_conn_id="redshift",
     autocommit=True
 )
 
-load_posts_snapshot_table = PostgresOperator(
+load_posts_snapshot_table = RedshiftOperator(
     task_id='load_posts_snapshot',
     dag=dag,
     sql='resources/posts_snapshot.sql',
     params={
         "schema_name":schema_name,
-        "dt":dt
+        "ds":'{{ ds }}'
     },
     postgres_conn_id="redshift",
     autocommit=True
 )
 
-load_posts_dimension_table = PostgresOperator(
+load_posts_dimension_table = RedshiftOperator(
     task_id='load_posts_dimension',
     dag=dag,
     sql='resources/posts_dimension.sql',
     params={
         "schema_name":schema_name,
-        "dt":dt
+        "ds":'{{ ds }}'
     },
     postgres_conn_id="redshift",
     autocommit=True
 )
 
-load_subreddit_snapshot_table = PostgresOperator(
+load_subreddit_snapshot_table = RedshiftOperator(
     task_id='load_subreddit_snapshot',
     dag=dag,
     sql='resources/subreddit_snapshot.sql',
     params={
         "schema_name":schema_name,
-        "dt":dt
+        "ds":'{{ ds }}'
     },
     postgres_conn_id="redshift",
     autocommit=True
 )
 
-load_subreddit_dimension_table = PostgresOperator(
+load_subreddit_dimension_table = RedshiftOperator(
     task_id='load_subreddit_dimension',
     dag=dag,
     sql='resources/subreddit_dimension.sql',
     params={
         "schema_name":schema_name,
-        "dt":dt
+        "ds":'{{ ds }}'
     },
     postgres_conn_id="redshift",
     autocommit=True
@@ -177,13 +177,13 @@ dim_complete = DummyOperator(
     dag=dag
 )
 
-load_fact_table = PostgresOperator(
+load_fact_table = RedshiftOperator(
     task_id='load_fact_table',
     dag=dag,
     sql='resources/fact_table.sql',
     params={
         "schema_name":schema_name,
-        "dt":dt
+        "ds":'{{ ds }}'
     },
     postgres_conn_id="redshift",
     autocommit=True

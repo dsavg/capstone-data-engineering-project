@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS {{params.schema_name}}.post_snapshot
     snapshot_date varchar(256)
 );
 
-DELETE FROM {{params.schema_name}}.post_snapshot WHERE snapshot_date='{{params.dt}}';
+DELETE FROM {{params.schema_name}}.post_snapshot WHERE snapshot_date='{{ ds }}';
 
 INSERT INTO {{params.schema_name}}.post_snapshot
 (
@@ -44,8 +44,8 @@ INSERT INTO {{params.schema_name}}.post_snapshot
         pinned,
         saved,
         send_replies,
-        '{{params.dt}}' AS snapshot_date
+        '{{ ds }}' AS snapshot_date
     FROM {{params.schema_name}}.reddit_logs
-    WHERE snapshot_date = '{{params.dt}}'
+    WHERE snapshot_date = '{{ ds }}'
     GROUP BY 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18
 );

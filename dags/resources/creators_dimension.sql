@@ -1,10 +1,10 @@
 CREATE TABLE IF NOT EXISTS {{params.schema_name}}.creators_d
 (
-    creator_id VARCHAR(256) NOT NULL,
+    creator_id VARCHAR(256)      PRIMARY KEY      SORTKEY,
     name VARCHAR(256),
-    is_blocked BOOLEAN,
-	CONSTRAINT creators_d_pkey PRIMARY KEY (creator_id)
-);
+    is_blocked BOOLEAN
+)
+diststyle all;
 
 DELETE FROM {{params.schema_name}}.creators_d;
 

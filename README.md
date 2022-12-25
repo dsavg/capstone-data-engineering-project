@@ -1,8 +1,7 @@
 # Capstone project for Udacity's Data Engineering Nanodegree
-Project is work in progress, stay tuned...
 
 ## 1. Overview
-TO DO
+The goal of this project is to create a Data Warehouse to fetch, store, and analyze trending world news subreddits. The project uses the Reddit API, AWS S3, AWS EMR, AWS Redshifth, pySpark, SQL, and Airflow to accomplish that goal.
 
 ## Table of Content
 [2. Datawarehouse Architecture]()
@@ -156,10 +155,24 @@ The Dag load and transform Reddit data in Redshift with Airflow.
 [DataQualityOperator](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/data_quality.py): Operator to check is the data output is as expected. 
 
 ## 5. Data Model
-TO DO
+**Main Tables**  
+![img10](imgs/tables.png)
+
+**Helper Tables**
+![img11](imgs/helper_tables.png)
 
 ## 6. S3 Data Storage
-TO DO
+Here is the s3 bucket `reddit-project-data` file structure 
+
+![img6](imgs/s3_bucket.png)
+
+`raw-json-logs` json files stored following
+
+![img7](imgs/s3_json.png)
+
+`reddit-data` parquet files stored following
+
+![img8](imgs/s3_parquet.png)
 
 ## 6. Resources
 * https://towardsdatascience.com/run-airflow-docker-1b83a57616fb

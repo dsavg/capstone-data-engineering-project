@@ -2,7 +2,7 @@ DROP TABLE IF EXISTS {{params.schema_name}}.post_d;
 
 CREATE TABLE IF NOT EXISTS {{params.schema_name}}.post_d
 (
-    post_id varchar(256) NOT NULL,
+    post_id varchar(256)      PRIMARY KEY      SORTKEY,
     created_date timestamp,
     title varchar(256),
     name varchar(256),
@@ -19,9 +19,9 @@ CREATE TABLE IF NOT EXISTS {{params.schema_name}}.post_d
     over_18 boolean,
     pinned boolean,
     saved boolean,
-    send_replies boolean,
-	CONSTRAINT post_d_pkey PRIMARY KEY (post_id)
-);
+    send_replies boolean
+)
+diststyle all;
 
 DELETE FROM {{params.schema_name}}.post_d;
 

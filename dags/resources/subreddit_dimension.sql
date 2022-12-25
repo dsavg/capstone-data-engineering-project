@@ -1,12 +1,12 @@
 CREATE TABLE IF NOT EXISTS {{params.schema_name}}.subreddit_d
 (
-    subreddit_id varchar(256) NOT NULL,
+    subreddit_id varchar(256)      PRIMARY KEY      SORTKEY,
     name varchar(256),
     prefixed_name varchar(256),
     type varchar(256),
-    num_subscribers int8,
-	CONSTRAINT subreddit_d_pkey PRIMARY KEY (subreddit_id)
-);
+    num_subscribers int8
+)
+diststyle all;
 
 DELETE FROM {{params.schema_name}}.subreddit_d;
 

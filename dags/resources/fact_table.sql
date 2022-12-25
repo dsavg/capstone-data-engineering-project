@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS {{params.schema_name}}.reddit_fact (
-    creator_id varchar(256) NOT NULL,
-    subreddit_id varchar(256) NOT NULL,
-    post_id varchar(256) NOT NULL,
+    creator_id varchar(256) NOT NULL     REFERENCES {{params.schema_name}}.creators_d(creator_id),
+    subreddit_id varchar(256) NOT NULL   REFERENCES {{params.schema_name}}.subreddit_d(subreddit_id),
+    post_id varchar(256) NOT NULL        REFERENCES {{params.schema_name}}.post_d(post_id),
     num_comments int8,
     num_crossposts int8,
     score bigint,

@@ -172,6 +172,11 @@ load_subreddit_dimension_table = PostgresOperator(
     autocommit=True
 )
 
+dim_complete = DummyOperator(
+    task_id='dim_tables_complete',
+    dag=dag
+)
+
 load_fact_table = PostgresOperator(
     task_id='load_fact_table',
     dag=dag,
@@ -243,8 +248,7 @@ load_reddit_data
 
 load_reddit_data >> [load_creator_snapshot_table,
                      load_posts_snapshot_table,
-                     load_subreddit_snapshot_table,
-                     load_fact_table]
+                     load_subreddit_snapshot_table]
 
 load_creator_snapshot_table >> load_creator_dimension_table >> creator_dimension_table_quality_checks
 
@@ -252,9 +256,8 @@ load_posts_snapshot_table >> load_posts_dimension_table >> posts_dimension_table
 
 load_subreddit_snapshot_table >> load_subreddit_dimension_table >> subreddit_dimension_table_quality_checks
 
-load_fact_table >> fact_table_quality_checks
-
 [creator_dimension_table_quality_checks,
  posts_dimension_table_quality_checks,
- subreddit_dimension_table_quality_checks,
- fact_table_quality_checks] >> end_operator
+ subreddit_dimension_table_quality_checks] >> dim_complete
+
+dim_complete >> load_fact_table >> fact_table_quality_checks >> end_operator

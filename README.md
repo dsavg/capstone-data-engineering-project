@@ -4,7 +4,7 @@
 The goal of this project is to create a Data Warehouse to fetch, store, and analyze trending world news subreddits. The project uses the Reddit API, AWS S3, AWS EMR, AWS Redshift, pySpark, SQL, and Airflow to accomplish that goal.
 
 ## Table of Content
-[2. Datawarehouse Architecture]()
+[2. Datawarehouse Architecture](https://github.com/dsavg/capstone-data-engineering-project#2-datawarehouse-architecture)
 [3. Set up](https://github.com/dsavg/capstone-data-engineering-project#3-set-up)  
 [3.1. Amazon Web Servises](https://github.com/dsavg/capstone-data-engineering-project#31-amazon-web-servises)  
 [3.2. Reddit API](https://github.com/dsavg/capstone-data-engineering-project#32-reddit-api)  
@@ -16,7 +16,8 @@ The goal of this project is to create a Data Warehouse to fetch, store, and anal
 [4.1.3. reddit_dwr_dag](https://github.com/dsavg/capstone-data-engineering-project#413-reddit_dwr_dag)  
 [4.2. Custom Operators](https://github.com/dsavg/capstone-data-engineering-project#42-custom-operators)  
 [5. Data Model](https://github.com/dsavg/capstone-data-engineering-project#5-data-model)  
-[6. Resources](https://github.com/dsavg/capstone-data-engineering-project#resources)
+[6. S3 Data Storage](https://github.com/dsavg/capstone-data-engineering-project#6-s3-data-storage)
+[7. Resources](https://github.com/dsavg/capstone-data-engineering-project#7-resources)
 
 ## 2. Datawarehouse Architecture
 ![img0](imgs/datawarehouse_architecture.png)
@@ -152,6 +153,7 @@ The Dag load and transform Reddit data in Redshift with Airflow.
 ### 4.2. Custom Operators
 [RedditΤoS3Operator](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/reddit_api.py): Operator to get API Reddit data and store them in S3 in JSON format.  
 [S3PartitionCheck](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/s3_partition_check.py): Operator to check is date partition exists in S3 path.  
+[StageToRedshiftOperator](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/stage_redshift.py): Operator to load parquet from S3 to Redshift.  
 [DataQualityOperator](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/data_quality.py): Operator to check is the data output is as expected. 
 
 ## 5. Data Model

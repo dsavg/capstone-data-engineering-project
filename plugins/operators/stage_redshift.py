@@ -1,5 +1,5 @@
 """
-Operator to load any JSON formatted files from S3 to Amazon Redshift.
+Operator to load any parquet formatted files from S3 to Amazon Redshift.
 Functionalities:
 1. Create and run a SQL COPY statement based on the parameters provided.
 2. Ability to distinguish between JSON files.

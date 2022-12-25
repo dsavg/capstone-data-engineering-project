@@ -24,7 +24,7 @@ class StageToRedshiftOperator(BaseOperator):
     :param json_path: (Optional) json path for format of copy
     """
 
-    ui_color = '#89DA59'
+    ui_color = '#BC45C4'
     template_fields = ("dt",)
     copy_sql = """
         COPY {}.{}
@@ -64,7 +64,7 @@ class StageToRedshiftOperator(BaseOperator):
         # render s3 path based on inputs
         self.log.info("Copying data from S3 to Redshift")
         rendered_key = self.s3_key.format(**context)
-        s3_path = f"s3://{self.s3_bucket}/{rendered_key}date= {self.dt}"
+        s3_path = f"s3://{self.s3_bucket}/{rendered_key}date={self.dt}"
         # format copy statement from s3 to Amazon Redshift
         formatted_sql = StageToRedshiftOperator.copy_sql.format(
             self.schema,

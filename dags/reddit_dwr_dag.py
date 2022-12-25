@@ -45,7 +45,7 @@ reddit_data_sensor = S3PartitionCheck(
     dag=dag,
     aws_credentials_id=aws_creds,
     s3_bucket=BUCKET_NAME,
-    s3_key="reddit-data/date= {}/",
+    s3_key="reddit-data/date={}/",
     params={
         'end_date': '{{ ds }}'
     }
@@ -193,41 +193,89 @@ creator_dimension_table_quality_checks = DataQualityOperator(
     task_id='creator_dimension_table_quality_checks',
     dag=dag,
     redshift_conn_id="redshift",
-    query_check_dict={
-        f'SELECT COUNT(*) FROM {schema_name}.creators_d WHERE creator_id is Null':(0, '='),
-        f'SELECT COUNT(*) FROM {schema_name}.creators_d':(0, '>'),
-    }
+    query_checks=
+    [
+        {
+            'query': 'SELECT COUNT(*) FROM {{ params.schema_name }}.creators_d WHERE creator_id is Null',
+            'operation':'=',
+            'value':0
+        },
+        {
+            'query': 'SELECT COUNT(*) FROM {{ params.schema_name }}.creators_d',
+            'operation':'>',
+            'value':0
+        }
+    ],
+    params={
+        "schema_name":schema_name,
+    },
 )
 
 posts_dimension_table_quality_checks = DataQualityOperator(
     task_id='posts_dimension_table_quality_checks',
     dag=dag,
     redshift_conn_id="redshift",
-    query_check_dict={
-        f'SELECT COUNT(*) FROM {schema_name}.post_d WHERE post_id is Null':(0, '='),
-        f'SELECT COUNT(*) FROM {schema_name}.post_d':(0, '>'),
-    }
+    query_checks=
+    [
+        {
+            'query': 'SELECT COUNT(*) FROM {{ params.schema_name }}.post_d WHERE post_id is Null',
+            'operation':'=',
+            'value':0
+        },
+        {
+            'query': 'SELECT COUNT(*) FROM {{ params.schema_name }}.post_d',
+            'operation':'>',
+            'value':0
+        }
+    ],
+    params={
+        "schema_name":schema_name,
+    },
 )
 
 subreddit_dimension_table_quality_checks = DataQualityOperator(
     task_id='subreddit_dimension_table_quality_checks',
     dag=dag,
     redshift_conn_id="redshift",
-    query_check_dict={
-        f'SELECT COUNT(*) FROM {schema_name}.subreddit_d WHERE subreddit_id is Null':(0, '='),
-        f'SELECT COUNT(*) FROM {schema_name}.subreddit_d':(0, '>'),
-    }
+    query_checks=
+    [
+        {
+            'query': 'SELECT COUNT(*) FROM {{ params.schema_name }}.subreddit_d WHERE subreddit_id is Null',
+            'operation':'=',
+            'value':0
+        },
+        {
+            'query': 'SELECT COUNT(*) FROM {{ params.schema_name }}.subreddit_d',
+            'operation':'>',
+            'value':0
+        }
+    ],
+    params={
+        "schema_name":schema_name,
+    },
 )
 
 fact_table_quality_checks = DataQualityOperator(
     task_id='fact_table_quality_checks',
     dag=dag,
     redshift_conn_id="redshift",
-    query_check_dict={
-        f"SELECT COUNT(*) FROM {schema_name}.reddit_fact "
-        "WHERE (subreddit_id is Null or post_id is Null or creator_id is Null)":(0, '='),
-        f"SELECT COUNT(*) FROM {schema_name}.reddit_fact":(0, '>'),
-    }
+    query_checks=
+    [
+        {
+            'query': 'SELECT COUNT(*) FROM {{ params.schema_name }}.reddit_fact '
+                     'WHERE (subreddit_id is Null or post_id is Null or creator_id is Null)',
+            'operation':'=',
+            'value':0
+        },
+        {
+            'query': "SELECT COUNT(*) FROM {{ params.schema_name }}.reddit_fact where dt = '{{ ds }}'",
+            'operation':'>',
+            'value':0
+        }
+    ],
+    params={
+        "schema_name":schema_name,
+    },
 )
 
 end_operator = DummyOperator(

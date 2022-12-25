@@ -23,7 +23,6 @@ AWS_SECRET = os.environ.get('AWS_SECRET')
 
 BUCKET_NAME = "reddit-project-data"
 aws_creds = "aws_default"
-dt = '2022-12-24' # TO DO: remove hardcoded value here
 
 default_args = {
     'owner': 'danai',
@@ -93,8 +92,8 @@ SPARK_STEPS = [
                 "--deploy-mode",
                 "client",
                 "s3://{{ params.BUCKET_NAME }}/{{ params.s3_script }}",
-                "--dt",
-                " {{ params.dt }}",
+                "--ds",
+                "{{ ds }}",
                 "--s3_bucket",
                 "{{ params.BUCKET_NAME }}",
                 "--input_file_path",
@@ -116,8 +115,7 @@ step_adder = EmrAddStepsOperator(
     params={
         "BUCKET_NAME": BUCKET_NAME,
         "s3_script": "scripts/s3_to_parquet.py",
-        "dt": f'{dt}',
-        "input_file_path": f"raw-json-logs/reddit-worldnews-hot-{dt}.json",
+        "input_file_path": "raw-json-logs/reddit-worldnews-hot-",
         "output_file_path": "reddit-data/"
     },
 

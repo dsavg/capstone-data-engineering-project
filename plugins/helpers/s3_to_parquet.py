@@ -11,8 +11,6 @@ responsibilities,
 import argparse
 from pyspark.sql import SparkSession
 
-# template_fields = ("ds",)
-
 all_fields = (
 
     "data.author",
@@ -86,7 +84,7 @@ def transform_load_data(spark, input_data, output_data, ds):
 if __name__ == "__main__":
     # parse arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dt",
+    parser.add_argument("--ds",
                         type=str,
                         help="execution date",
                         default="2022-12-01")
@@ -104,7 +102,7 @@ if __name__ == "__main__":
                         default="reddit-data/")
     args = parser.parse_args()
     # get parameters
-    dt = args.dt
+    ds = args.ds
     s3_bucket = args.s3_bucket
     input_file_path = args.input_file_path
     output_file_path = args.output_file_path
@@ -114,10 +112,10 @@ if __name__ == "__main__":
              .appName("From S3 to parquet")
              .getOrCreate())
     # s3 input/output paths
-    s3_input_data = f's3a://{s3_bucket}/{input_file_path}'
+    s3_input_data = f's3a://{s3_bucket}/{input_file_path}{ds}.json'
     s3_output_data = f's3a://{s3_bucket}/{output_file_path}'
     # execute transformation function
     transform_load_data(spark_session,
                         s3_input_data,
                         s3_output_data,
-                        dt)
+                        ds)

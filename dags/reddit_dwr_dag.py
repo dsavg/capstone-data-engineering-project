@@ -16,7 +16,6 @@ AWS_SECRET = os.environ.get('AWS_SECRET')
 BUCKET_NAME = "reddit-project-data"
 aws_creds = "aws_default"
 schema_name = 'reddit'
-dt = "2022-12-24" # TO DO: remove hardcoded value here
 
 default_args = {
     'owner':'danai',
@@ -225,11 +224,9 @@ fact_table_quality_checks = DataQualityOperator(
     dag=dag,
     redshift_conn_id="redshift",
     query_check_dict={
-        f"""SELECT COUNT(*) 
-        FROM {schema_name}.reddit_fact 
-        WHERE dt = {dt} 
-        and (subreddit_id is Null or post_id is Null or creator_id is Null)""":(0, '='),
-        f"SELECT COUNT(*) FROM {schema_name}.reddit_fact WHERE dt = '{dt}'":(0, '>'),
+        f"SELECT COUNT(*) FROM {schema_name}.reddit_fact "
+        "WHERE (subreddit_id is Null or post_id is Null or creator_id is Null)":(0, '='),
+        f"SELECT COUNT(*) FROM {schema_name}.reddit_fact":(0, '>'),
     }
 )
 

@@ -1,7 +1,11 @@
 # Capstone project for Udacity's Data Engineering Nanodegree
 
 ## 1. Overview
-The goal of this project is to create a Data Warehouse to fetch, store, and analyze trending world news subreddits. The project uses the Reddit API, AWS S3, AWS EMR, AWS Redshift, pySpark, SQL, and Airflow to accomplish that goal.
+The goal of this project is to create a Data Warehouse to analyze trending world news subreddits using Airflow. 
+
+The project uses the Reddit API to get the top 50 trending world news subreddits and stores them on AWS S3 in JSON format. 
+Next, data processing happens on an EMR cluster on AWS using PySpark and processed data gets stored on AWS S3 in parquet format. 
+Finally, the data gets inserted into AWS Redshift and normalized creating fact and dimension tables.
 
 ## Table of Content
 [2. Datawarehouse Architecture](https://github.com/dsavg/capstone-data-engineering-project#2-datawarehouse-architecture)
@@ -31,17 +35,15 @@ The goal of this project is to create a Data Warehouse to fetch, store, and anal
     
     Save the `Access key ID` and `Secret access key` to use in Airflow later.
 * Create an S3 bucket named `reddit-project-data`.
-* Create a Redshift cluster on AWS, which it publicly accessible and enhanced VPC routing.
+* Create a Redshift cluster on AWS, which is publicly accessible and has enhanced VPC routing.
 
 ### 3.2. Reddit API
-Follow the [How to Use the Reddit API in Python](https://towardsdatascience.com/how-to-use-the-reddit-api-in-python-5e05ddfd1e5c) post to set up your credentials for the Reddit API. Ones you've done that, you will need the save the 
+Following the steps in [How to Use the Reddit API in Python](https://towardsdatascience.com/how-to-use-the-reddit-api-in-python-5e05ddfd1e5c) medium post, set up your credentials for the Reddit API. Ones you've done that, you will need the keep the following information to use in Airflow later.
 * `client_id`
 * `client_secret`
 * `password`
 * `user_agent`
 * `username`  
-
-to use it in Airflow later. 
 
 ### 3.3. Airflow (v2.3.0) 
 Follow the [How to Run Airflow Locally With Docker](https://towardsdatascience.com/run-airflow-docker-1b83a57616fb) to start running your Airflow locally. Attached steps bellow,
@@ -132,29 +134,31 @@ The Dag load and transform Reddit data in Redshift with Airflow.
 ![img5](imgs/reddit_dwr_dag.png)
 ##### Tasks
 * `begin_execution`: uses the [DummyOperator](https://airflow.apache.org/docs/apache-airflow/2.3.1/_modules/airflow/operators/dummy_operator.html#DummyOperator) operator to indicate the start of the DAG.
+* `create_reddit_schema`: uses the [RedshiftOperator](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/redshift_op.py) operator that executes the [dags/resources/create_schema.sql](https://github.com/dsavg/capstone-data-engineering-project/blob/master/dags/resources/create_schema.sql) query to create the `reddit` schema, if it does not already exist.
 * `reddit_data_sensor`: uses the [S3PartitionCheck](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/s3_partition_check.py) custom operator that to check if the data partition exists in S3. The task fails and retries if data does not exist.
-* `create_reddit_schema`: uses the [PostgresOperator](https://airflow.apache.org/docs/apache-airflow-providers-postgres/stable/operators/postgres_operator_howto_guide.html) operator that executes the [dags/resources/create_schema.sql](https://github.com/dsavg/capstone-data-engineering-project/blob/master/dags/resources/create_schema.sql) query to create the `reddit` schema, if it does not already exist.
-* `create_stagging_table`: uses the [PostgresOperator](https://airflow.apache.org/docs/apache-airflow-providers-postgres/stable/operators/postgres_operator_howto_guide.html) operator that executes the [dags/resources/create_stagging_table.sql](https://github.com/dsavg/capstone-data-engineering-project/blob/master/dags/resources/create_stagging_table.sql) query to to create the `reddit.staging_reddit_logs` table.
+* `create_stagging_table`: uses the [RedshiftOperator](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/redshift_op.py) operator that executes the [dags/resources/create_stagging_table.sql](https://github.com/dsavg/capstone-data-engineering-project/blob/master/dags/resources/create_stagging_table.sql) query to to create the `reddit.staging_reddit_logs` table.
 * `stage_reddit_data`: uses the [StageToRedshiftOperator](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/stage_redshift.py) custom operator to copy the parquet logs to Redshift.
-* `load_reddit_data`: uses the [PostgresOperator](https://airflow.apache.org/docs/apache-airflow-providers-postgres/stable/operators/postgres_operator_howto_guide.html) operator that executes the [dags/resources/reddit_logs.sql](https://github.com/dsavg/capstone-data-engineering-project/blob/master/dags/resources/reddit_logs.sql) query to create the `reddit.reddit_logs` table.
-* `load_fact_table`: uses the [PostgresOperator](https://airflow.apache.org/docs/apache-airflow-providers-postgres/stable/operators/postgres_operator_howto_guide.html) operator that executes the [dags/resources/resources/fact_table.sql](https://github.com/dsavg/capstone-data-engineering-project/blob/master/dags/resources/fact_table.sql) query to create the `reddit.reddit_fact` table. query to
-* `load_creator_snapshot`: uses the [PostgresOperator](https://airflow.apache.org/docs/apache-airflow-providers-postgres/stable/operators/postgres_operator_howto_guide.html) operator that executes the [dags/resources/creators_snapshot.sql](https://github.com/dsavg/capstone-data-engineering-project/blob/master/dags/resources/creators_snapshot.sql) query to create the `reddit.creators_snapshot` table.
-* `load_creator_dimension`: uses the [PostgresOperator](https://airflow.apache.org/docs/apache-airflow-providers-postgres/stable/operators/postgres_operator_howto_guide.html) operator that executes the [dags/resources/creators_dimension.sql](https://github.com/dsavg/capstone-data-engineering-project/blob/master/dags/resources/creators_dimension.sql) query to create the `reddit.creators_d` table.
-* `load_posts_snapshot`: uses the [PostgresOperator](https://airflow.apache.org/docs/apache-airflow-providers-postgres/stable/operators/postgres_operator_howto_guide.html) operator that executes the [dags/resources/posts_snapshot.sql](https://github.com/dsavg/capstone-data-engineering-project/blob/master/dags/resources/posts_snapshot.sql) query to create the `reddit.post_snapshot` table.
-* `load_posts_dimension`: uses the [PostgresOperator](https://airflow.apache.org/docs/apache-airflow-providers-postgres/stable/operators/postgres_operator_howto_guide.html) operator that executes the [dags/resources/posts_dimension.sql](https://github.com/dsavg/capstone-data-engineering-project/blob/master/dags/resources/posts_dimension.sql) query to create the `reddit.post_d` table.
-* `load_subreddit_snapshot`: uses the [PostgresOperator](https://airflow.apache.org/docs/apache-airflow-providers-postgres/stable/operators/postgres_operator_howto_guide.html) operator that executes the [dags/resources/subreddit_snapshot.sql](https://github.com/dsavg/capstone-data-engineering-project/blob/master/dags/resources/subreddit_snapshot.sql) query to create the `reddit.subreddit_snapshot` table.
-* `load_subreddit_dimension`: uses the [PostgresOperator](https://airflow.apache.org/docs/apache-airflow-providers-postgres/stable/operators/postgres_operator_howto_guide.html) operator that executes the [dags/resources/subreddit_dimension.sql](https://github.com/dsavg/capstone-data-engineering-project/blob/master/dags/resources/subreddit_dimension.sql) query to create the `reddit.subreddit_d` table.
-* `fact_table_quality_checks`: uses the [DataQualityOperator](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/data_quality.py) operator that ensures no Null values for primary keys and more than 0 records on tables.
+* `load_reddit_data`: uses the [RedshiftOperator](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/redshift_op.py) operator that executes the [dags/resources/reddit_logs.sql](https://github.com/dsavg/capstone-data-engineering-project/blob/master/dags/resources/reddit_logs.sql) query to create the `reddit.reddit_logs` table.
+* `load_creator_snapshot`: uses the [RedshiftOperator](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/redshift_op.py) operator that executes the [dags/resources/creators_snapshot.sql](https://github.com/dsavg/capstone-data-engineering-project/blob/master/dags/resources/creators_snapshot.sql) query to create the `reddit.creators_snapshot` table.
+* `load_creator_dimension`: uses the [RedshiftOperator](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/redshift_op.py) operator that executes the [dags/resources/creators_dimension.sql](https://github.com/dsavg/capstone-data-engineering-project/blob/master/dags/resources/creators_dimension.sql) query to create the `reddit.creators_d` table.
 * `creator_dimension_table_quality_checks`: uses the [DataQualityOperator](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/data_quality.py) custom operator that ensures no Null values for primary keys and more than 0 records on tables.
+* `load_posts_snapshot`: uses the [RedshiftOperator](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/redshift_op.py) operator that executes the [dags/resources/posts_snapshot.sql](https://github.com/dsavg/capstone-data-engineering-project/blob/master/dags/resources/posts_snapshot.sql) query to create the `reddit.post_snapshot` table.
+* `load_posts_dimension`: uses the [RedshiftOperator](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/redshift_op.py) operator that executes the [dags/resources/posts_dimension.sql](https://github.com/dsavg/capstone-data-engineering-project/blob/master/dags/resources/posts_dimension.sql) query to create the `reddit.post_d` table.
 * `posts_dimension_table_quality_checks`: uses the [DataQualityOperator](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/data_quality.py) custom operator that ensures no Null values for primary keys and more than 0 records on tables.
+* `load_subreddit_snapshot`: uses the [RedshiftOperator](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/redshift_op.py) operator that executes the [dags/resources/subreddit_snapshot.sql](https://github.com/dsavg/capstone-data-engineering-project/blob/master/dags/resources/subreddit_snapshot.sql) query to create the `reddit.subreddit_snapshot` table.
+* `load_subreddit_dimension`: uses the [RedshiftOperator](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/redshift_op.py) operator that executes the [dags/resources/subreddit_dimension.sql](https://github.com/dsavg/capstone-data-engineering-project/blob/master/dags/resources/subreddit_dimension.sql) query to create the `reddit.subreddit_d` table.
 * `subreddit_dimension_table_quality_checks`: uses the [DataQualityOperator](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/data_quality.py) custom operator that ensures no Null values for primary keys and more than 0 records on tables.
+* `dim_table_complete`: uses the [DummyOperator](https://airflow.apache.org/docs/apache-airflow/2.3.1/_modules/airflow/operators/dummy_operator.html#DummyOperator) operator to indicate that the dimension tables are ready.
+* `load_fact_table`: uses the [RedshiftOperator](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/redshift_op.py) operator that executes the [dags/resources/resources/fact_table.sql](https://github.com/dsavg/capstone-data-engineering-project/blob/master/dags/resources/fact_table.sql) query to create the `reddit.reddit_fact` table. query to
+* `fact_table_quality_checks`: uses the [DataQualityOperator](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/data_quality.py) operator that ensures no Null values for primary keys and more than 0 records on tables.
 * `end_execution`: uses the [DummyOperator](https://airflow.apache.org/docs/apache-airflow/2.3.1/_modules/airflow/operators/dummy_operator.html#DummyOperator) operator to indicate the end of the DAG.
 
 ### 4.2. Custom Operators
 [RedditΤoS3Operator](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/reddit_api.py): Operator to get API Reddit data and store them in S3 in JSON format.  
-[S3PartitionCheck](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/s3_partition_check.py): Operator to check is date partition exists in S3 path.  
-[StageToRedshiftOperator](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/stage_redshift.py): Operator to load parquet from S3 to Redshift.  
-[DataQualityOperator](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/data_quality.py): Operator to check is the data output is as expected. 
+[S3PartitionCheck](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/s3_partition_check.py): Operator to check if the date partition exists in S3 path.  
+[StageToRedshiftOperator](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/stage_redshift.py): Operator to load parquet from S3 to Redshift. 
+[RedshiftOperator](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/redshift_op.py): [PostgresOperator](https://airflow.apache.org/docs/apache-airflow-providers-postgres/stable/operators/postgres_operator_howto_guide.html) modified operator to turn the `sql` and `params` fields to templated fields.  
+[DataQualityOperator](https://github.com/dsavg/capstone-data-engineering-project/blob/master/plugins/operators/data_quality.py): Operator to check if the data output is as expected. 
 
 ## 5. Data Model
 **Main Tables**  

@@ -1,5 +1,5 @@
-"""
-Data Quality Operator.
+"""Data Quality Operator.
+
 The operator's main functionality is to receive one or more SQL
 based test cases along with the expected results and execute the tests.
 For each, the test result and expected result will to be checked and if
@@ -13,21 +13,9 @@ from airflow.hooks.postgres_hook import PostgresHook
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
 
-# TO DO: currently the query_check_dict is a dict with key string and value list
-# should change to list of dictionaries like
-# https://airflow.apache.org/docs/apache-airflow/1.10.1/_modules/airflow/contrib/operators/emr_add_steps_operator.html
-
 
 class DataQualityOperator(BaseOperator):
-    """
-    Executes SQL queries for data quality checks.
-    :param redshift_conn_id: (Optional) Amazon Redshift connection id
-    :param query_checks: (Optional) list of dictionaries containing with keys
-        - 'query': query to check
-        - 'operation': mathematical operation to check (=,<,>)
-        - 'value': value to check the query results against
-        data check queries and expected results
-    """
+    """Executes SQL queries for data quality checks."""
 
     ui_color = '#59D8DA'
     template_fields = ("query_checks",)
@@ -37,6 +25,16 @@ class DataQualityOperator(BaseOperator):
                  redshift_conn_id: str = "",
                  query_checks: List[Dict] = None,
                  *args, **kwargs) -> None:
+        """
+        Class initialization
+
+        :param redshift_conn_id: (Optional) Amazon Redshift connection id
+        :param query_checks: (Optional) list of dictionaries containing with keys
+            - 'query': query to check
+            - 'operation': mathematical operation to check (=,<,>)
+            - 'value': value to check the query results against
+            data check queries and expected results
+        """
         super().__init__(*args, **kwargs)
         self.redshift_conn_id = redshift_conn_id
         self.query_checks = query_checks

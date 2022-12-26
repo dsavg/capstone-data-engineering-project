@@ -1,5 +1,5 @@
-"""
-Operator to load any parquet formatted files from S3 to Amazon Redshift.
+"""Operator to load any parquet formatted files from S3 to Amazon Redshift.
+
 Functionalities:
 1. Create and run a SQL COPY statement based on the parameters provided.
 2. Ability to distinguish between JSON files.
@@ -14,15 +14,7 @@ from airflow.utils.decorators import apply_defaults
 
 
 class StageToRedshiftOperator(BaseOperator):
-    """
-    Airflow operator to load JSON formatted files from S3 to Redshift.
-    :param redshift_conn_id: (Optional) Amazon Redshift connection id
-    :param aws_credentials_id: (Optional) AWS credentials id
-    :param table: (Optional) Table name (format: {schema}.{table})
-    :param s3_bucket: (Optional) S3 bucket name
-    :param s3_key: (Optional) S3 bucket key
-    :param json_path: (Optional) json path for format of copy
-    """
+    """Airflow operator to load JSON formatted files from S3 to Redshift."""
 
     ui_color = '#BC45C4'
     template_fields = ("dt",)
@@ -44,6 +36,16 @@ class StageToRedshiftOperator(BaseOperator):
                  s3_key: str = "",
                  dt: str = "",
                  *args, **kwargs) -> None:
+        """
+        Airflow operator to load JSON formatted files from S3 to Redshift.
+        :param redshift_conn_id: (Optional) Amazon Redshift connection id
+        :param aws_credentials_id: (Optional) AWS credentials id
+        :param schema: (Optional) Schema name
+        :param table: (Optional) Table name
+        :param s3_bucket: (Optional) S3 bucket name
+        :param s3_key: (Optional) S3 bucket key
+        :param dt: (Optional) partition date
+        """
         super().__init__(*args, **kwargs)
         self.redshift_conn_id = redshift_conn_id
         self.aws_credentials_id = aws_credentials_id

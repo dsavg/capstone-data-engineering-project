@@ -1,11 +1,11 @@
 # Capstone project for Udacity's Data Engineering Nanodegree
 
 ## 1. Overview
-The goal of this project is to create a Data Warehouse to analyze trending world news subreddits using Airflow. 
+The goal of this project is to create a Data Warehouse to analyze trending and new subreddits using Airflow.
 
-The project uses the Reddit API to get the top 50 trending world news subreddits and stores them on AWS S3 in JSON format. 
-Next, data processing happens on an EMR cluster on AWS using PySpark and processed data gets stored on AWS S3 in parquet format. 
-Finally, the data gets inserted into AWS Redshift and denormalize creating fact and dimension tables.
+The project uses the Reddit API to get subreddits and stores them on AWS S3 in JSON format. Data processing 
+happens on an EMR cluster on AWS using PySpark and processed data gets stored on AWS S3 in parquet format. 
+Finally, the data gets inserted into AWS Redshift, gets denormalized to create fact and dimension tables.
 
 ## Table of Content
 [2. Datawarehouse Architecture](https://github.com/dsavg/capstone-data-engineering-project#2-datawarehouse-architecture)

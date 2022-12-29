@@ -1,5 +1,3 @@
---DROP TABLE IF EXISTS {{params.schema_name}}.creators_snapshot CASCADE;
-
 CREATE TABLE IF NOT EXISTS {{params.schema_name}}.creators_snapshot
 (
     creator_id      VARCHAR      NOT NULL,

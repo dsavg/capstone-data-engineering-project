@@ -1,5 +1,3 @@
---DROP TABLE {{params.schema_name}}.creators_d CASCADE;
-
 CREATE TABLE IF NOT EXISTS {{params.schema_name}}.creators_d
 (
     creator_id      VARCHAR      PRIMARY KEY     SORTKEY,

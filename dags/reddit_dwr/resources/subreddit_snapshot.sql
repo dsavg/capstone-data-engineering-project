@@ -1,5 +1,3 @@
---DROP TABLE IF EXISTS {{params.schema_name}}.subreddits_snapshot CASCADE;
-
 CREATE TABLE IF NOT EXISTS {{params.schema_name}}.subreddits_snapshot
 (
     subreddit_id      VARCHAR     NOT NULL,

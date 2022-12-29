@@ -1,5 +1,3 @@
---DROP TABLE IF EXISTS {{params.schema_name}}.posts_d CASCADE;
-
 CREATE TABLE IF NOT EXISTS {{params.schema_name}}.posts_d
 (
     post_id                     VARCHAR             PRIMARY KEY     SORTKEY,

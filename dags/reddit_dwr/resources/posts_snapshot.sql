@@ -1,5 +1,3 @@
---DROP TABLE IF EXISTS {{params.schema_name}}.posts_snapshot CASCADE;
-
 CREATE TABLE IF NOT EXISTS {{params.schema_name}}.posts_snapshot
 (
     post_id                 VARCHAR          NOT NULL,

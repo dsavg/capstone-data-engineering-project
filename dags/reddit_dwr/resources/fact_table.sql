@@ -1,5 +1,3 @@
---DROP TABLE {{params.schema_name}}.reddit_fact CASCADE;
-
 CREATE TABLE IF NOT EXISTS {{params.schema_name}}.reddit_fact (
     event_id                BIGINT      IDENTITY(0,1)   PRIMARY KEY,
     creator_id              VARCHAR     NOT NULL        REFERENCES {{params.schema_name}}.creators_d(creator_id),

@@ -1,5 +1,3 @@
---DROP TABLE IF EXISTS {{params.schema_name}}.subreddits_d CASCADE;
-
 CREATE TABLE IF NOT EXISTS {{params.schema_name}}.subreddits_d
 (
     subreddit_id      VARCHAR     PRIMARY KEY    SORTKEY,

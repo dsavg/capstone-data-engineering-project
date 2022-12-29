@@ -47,6 +47,6 @@ class RedshiftTableCheck(BaseOperator):
         records = redshift.get_records(query)
         result = records[0][0]
         if not result:
-            raise ValueError("Date check Failed: '{self.ds}' "
-                             "not found in {self.schema}.{self.table")
-        self.log.info("Date check Passed for '{self.ds}'")
+            raise ValueError(f"Date check failed: '{self.ds}' not "
+                             f"found in {self.schema}.{self.table}")
+        self.log.info(f"Date check passed for '{self.ds}'")

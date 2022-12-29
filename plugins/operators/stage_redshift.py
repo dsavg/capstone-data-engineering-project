@@ -19,11 +19,10 @@ class StageToRedshiftOperator(BaseOperator):
     ui_color = '#BC45C4'
     template_fields = ("dt",)
     copy_sql = """
-        COPY {}.{}
-        FROM '{}'
-        ACCESS_KEY_ID '{}'
-        SECRET_ACCESS_KEY '{}'
-        FORMAT AS PARQUET;
+    COPY {}.{}
+    FROM '{}'
+    ACCESS_KEY_ID '{}'
+    SECRET_ACCESS_KEY '{}'
     """
 
     @apply_defaults
@@ -34,6 +33,7 @@ class StageToRedshiftOperator(BaseOperator):
                  table: str = "",
                  s3_bucket: str = "",
                  s3_key: str = "",
+                 file_type:str = "parquet",
                  dt: str = "",
                  *args, **kwargs) -> None:
         """
@@ -44,6 +44,7 @@ class StageToRedshiftOperator(BaseOperator):
         :param table: (Optional) Table name
         :param s3_bucket: (Optional) S3 bucket name
         :param s3_key: (Optional) S3 bucket key
+        :param file_type: (Optional) File type, currently supporting `parquet` and `csv`
         :param dt: (Optional) partition date
         """
         super().__init__(*args, **kwargs)
@@ -53,7 +54,9 @@ class StageToRedshiftOperator(BaseOperator):
         self.table = table
         self.s3_bucket = s3_bucket
         self.s3_key = s3_key
+        self.file_type = file_type
         self.dt = dt
+        self.sql = None
 
     def execute(self, context) -> None:
         """Copy data from s3 to Amazon Redshift."""
@@ -66,9 +69,19 @@ class StageToRedshiftOperator(BaseOperator):
         # render s3 path based on inputs
         self.log.info("Copying data from S3 to Redshift")
         rendered_key = self.s3_key.format(**context)
-        s3_path = f"s3://{self.s3_bucket}/{rendered_key}date={self.dt}"
+        # file type modifications
+        if self.file_type == 'parquet':
+            s3_path = f"s3://{self.s3_bucket}/{rendered_key}date={self.dt}"
+            self.sql = StageToRedshiftOperator.copy_sql+"FORMAT AS PARQUET;"
+        elif self.file_type == 'csv':
+            s3_path = f"s3://{self.s3_bucket}/{rendered_key}"
+            self.sql = StageToRedshiftOperator.copy_sql + \
+                       "TIMEFORMAT 'auto'\n" +\
+                       "IGNOREHEADER 1\n" + "CSV;"
+        else:
+            raise NameError(f'Unsupport file type "{self.file_type}"')
         # format copy statement from s3 to Amazon Redshift
-        formatted_sql = StageToRedshiftOperator.copy_sql.format(
+        formatted_sql = self.sql.format(
             self.schema,
             self.table,
             s3_path,

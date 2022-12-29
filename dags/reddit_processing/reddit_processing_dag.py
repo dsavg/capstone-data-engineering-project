@@ -1,5 +1,5 @@
 """
-Dag to request Reddit data from API and store them in S3 in JSON format.
+Dag to pprocess Reddit data using PySpark, and store them in parquet format on S3.
 """
 
 import os
@@ -25,21 +25,22 @@ BUCKET_NAME = "reddit-project-data"
 aws_creds = "aws_default"
 
 default_args = {
-    'owner': 'danai',
-    'depends_on_past': False,
-    'start_date': datetime(2022, 12, 23, 0, 0, 0, 0),
+    'owner':'danai',
+    'depends_on_past':False,
+    'start_date':datetime(2022, 12, 1, 0, 0, 0, 0),
     'retries': 3,
-    'retry_delay': timedelta(minutes=5),
-    'catchup': False,
-    'email_on_failure': False
+    'max_active_runs':1,
+    'retry_delay':timedelta(minutes=5),
+    'catchup':True,
+    'email_on_failure':False
 }
 
 
-dag = DAG('reddit_preprocessing',
+dag = DAG('reddit_processing',
           default_args=default_args,
           description='Process Reddit JSON logs with PySpark on EMR and '
                       'store them on S3 in parquet format with Airflow.',
-          schedule_interval='0 0 * * *'  # once an day
+          schedule_interval='0 15 * * *'  # daily at 7:05 am PST
           )
 
 # Start operator
@@ -52,7 +53,7 @@ reddit_data_sensor = S3PartitionCheck(
     dag=dag,
     aws_credentials_id=aws_creds,
     s3_bucket=BUCKET_NAME,
-    s3_key="raw-json-logs/reddit-worldnews-hot-{}.json",
+    s3_key="raw-json-logs/reddit-data-{}.json",
     params={
         'end_date': '{{ ds }}'
     }
@@ -72,18 +73,18 @@ def _local_to_s3(filename, key, bucket_name=BUCKET_NAME):
     s3 = S3Hook()
     s3.load_file(filename=filename, bucket_name=bucket_name, replace=True, key=key)
 
-# move pySpark code to s3 to execute on EMR
+# Move PySpark code to S3 to execute on EMR
 script_to_s3 = PythonOperator(
     dag=dag,
     task_id="script_to_s3",
     python_callable=_local_to_s3,
-    op_kwargs={"filename": "./plugins/helpers/s3_to_parquet.py",
+    op_kwargs={"filename": "./plugins/helpers/scripts/s3_to_parquet.py",
                "key": "scripts/s3_to_parquet.py",},
 )
 
 SPARK_STEPS = [
     {
-        "Name": "Classify movie reviews",
+        "Name": "Process Reddit Data",
         "ActionOnFailure": "CANCEL_AND_WAIT",
         "HadoopJarStep": {
             "Jar": "command-runner.jar",
@@ -109,13 +110,14 @@ SPARK_STEPS = [
 step_adder = EmrAddStepsOperator(
     dag=dag,
     task_id="add_steps",
-    job_flow_id="{{ task_instance.xcom_pull(task_ids='create_emr_cluster', key='return_value') }}",
+    job_flow_id="{{ task_instance.xcom_pull(task_ids='create_emr_cluster', "
+                "key='return_value') }}",
     aws_conn_id="aws_default",
     steps=SPARK_STEPS,
     params={
         "BUCKET_NAME": BUCKET_NAME,
         "s3_script": "scripts/s3_to_parquet.py",
-        "input_file_path": "raw-json-logs/reddit-worldnews-hot-",
+        "input_file_path": "raw-json-logs/reddit-data-",
         "output_file_path": "reddit-data/"
     },
 
@@ -123,11 +125,13 @@ step_adder = EmrAddStepsOperator(
 
 last_step = len(SPARK_STEPS) - 1
 
-# wait for the steps to complete
+# Wait for the steps to complete
 step_checker = EmrStepSensor(
     task_id="watch_step",
-    job_flow_id="{{ task_instance.xcom_pull('create_emr_cluster', key='return_value') }}",
-    step_id="{{ task_instance.xcom_pull(task_ids='add_steps', key='return_value')["
+    job_flow_id="{{ task_instance.xcom_pull('create_emr_cluster', "
+                "key='return_value') }}",
+    step_id="{{ task_instance.xcom_pull(task_ids='add_steps', "
+            "key='return_value')["
     + str(last_step)
     + "] }}",
     aws_conn_id="aws_default",
@@ -137,18 +141,20 @@ step_checker = EmrStepSensor(
 # Terminate the EMR cluster
 terminate_emr_cluster = EmrTerminateJobFlowOperator(
     task_id="terminate_emr_cluster",
-    job_flow_id="{{ task_instance.xcom_pull(task_ids='create_emr_cluster', key='return_value') }}",
+    job_flow_id="{{ task_instance.xcom_pull(task_ids='create_emr_cluster', "
+                "key='return_value') }}",
     aws_conn_id="aws_default",
     dag=dag,
 )
 
+# End operator
 end_operator = DummyOperator(task_id='end_execution',
                                dag=dag)
 
 start_operator>> \
 reddit_data_sensor >> \
-create_emr_cluster >> \
 script_to_s3 >> \
+create_emr_cluster >> \
 step_adder >> \
 step_checker >> \
 terminate_emr_cluster >> \

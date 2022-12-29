@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS {{params.schema_name}}.staging_dwr_dates (
+    date_utc                    FLOAT,
+    day                         BIGINT,
+    day_name                    VARCHAR,
+    week                        BIGINT,
+    weekday                     BIGINT,
+    month                       BIGINT,
+    month_name                  VARCHAR,
+    year                        BIGINT,
+    united_state_holidays       VARCHAR,
+    is_united_state_holiday     BOOLEAN,
+    united_kingdom_holidays     VARCHAR,
+    is_united_kingdom_holiday   BOOLEAN,
+    canada_holidays             VARCHAR,
+    is_canada_holiday           BOOLEAN,
+    australia_holidays          VARCHAR,
+    is_australia_holiday        BOOLEAN,
+    germany_holidays            VARCHAR,
+    is_germany_holiday          BOOLEAN
+);

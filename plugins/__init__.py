@@ -13,9 +13,12 @@ class RedditPlugin(AirflowPlugin):
         operators.S3PartitionCheck,
         operators.StageToRedshiftOperator,
         operators.DataQualityOperator,
-        operators.RedshiftOperator
+        operators.RedshiftOperator,
+        operators.RedshiftTableCheck
     ]
     helpers = [
         helpers.SubredditAPI,
-        helpers.JOB_FLOW_OVERRIDES
+        helpers.JOB_FLOW_OVERRIDES,
+        helpers.SUBREDDIT_NAMES,
+        helpers.SUBREDDIT_TYPES
     ]

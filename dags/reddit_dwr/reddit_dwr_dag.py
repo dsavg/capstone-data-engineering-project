@@ -1,13 +1,13 @@
 """
-Dag to load and transform Reddit data in Redshift with Airflow.
+Dag to create the Reddit data model in Redshift with Airflow.
 """
 
 import os
 from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.dummy_operator import DummyOperator
-from operators import (StageToRedshiftOperator, S3PartitionCheck,
-                       RedshiftOperator, DataQualityOperator)
+from operators import (RedshiftOperator, DataQualityOperator,
+                       RedshiftTableCheck)
 
 # Get AWS configs from Airflow environment
 AWS_KEY = os.environ.get('AWS_KEY')
@@ -20,18 +20,20 @@ schema_name = 'reddit'
 default_args = {
     'owner':'danai',
     'depends_on_past':False,
-    'start_date':datetime(2022, 12, 23, 0, 0, 0, 0),
+    'start_date':datetime(2022, 12, 1, 0, 0, 0, 0),
     'retries':3,
+    'max_active_runs': 1,
     'retry_delay':timedelta(minutes=5),
-    'catchup':False,
+    'catchup':True,
     'email_on_failure':False
 }
 
 
 dag = DAG('reddit_dwr',
           default_args=default_args,
-          description='Load and transform Reddit data in Redshift with Airflow',
-          schedule_interval='0 0 * * *'  # once an day
+          description='Data model for Reddit '
+                      'data in Redshift with Airflow',
+          schedule_interval='0 15 * * *'  # daily at 7:05 am PST
           )
 
 
@@ -40,62 +42,17 @@ start_operator = DummyOperator(
     dag=dag
 )
 
-reddit_data_sensor = S3PartitionCheck(
+# Check if reddit.reddit_logs has data
+reddit_data_sensor = RedshiftTableCheck(
     task_id='reddit_data_sensor',
     dag=dag,
-    aws_credentials_id=aws_creds,
-    s3_bucket=BUCKET_NAME,
-    s3_key="reddit-data/date={}/",
+    redshift_conn_id='redshift',
+    schema='reddit',
+    table='reddit_logs',
+    dt_field='snapshot_date',
     params={
         'end_date': '{{ ds }}'
     }
-)
-
-create_schema = RedshiftOperator(
-    task_id='create_reddit_schema',
-    dag=dag,
-    sql='resources/create_schema.sql',
-    params={
-        "schema_name":schema_name
-    },
-    postgres_conn_id="redshift",
-    autocommit=True
-)
-
-# Create stagging reddit tables
-create_stagging_table = RedshiftOperator(
-    task_id='create_stagging_table',
-    dag=dag,
-    sql='resources/create_stagging_table.sql',
-    params={
-        "schema_name":schema_name
-    },
-    postgres_conn_id="redshift",
-    autocommit=True
-)
-
-stage_reddit_data = StageToRedshiftOperator(
-    task_id='stage_reddit_data',
-    dag=dag,
-    redshift_conn_id="redshift",
-    schema='reddit',
-    table='staging_reddit_logs',
-    aws_credentials_id="aws_credentials",
-    s3_bucket="reddit-project-data",
-    s3_key="reddit-data/",
-    dt='{{ ds }}'
-)
-
-load_reddit_data = RedshiftOperator(
-    task_id='load_reddit_data',
-    dag=dag,
-    sql='resources/reddit_logs.sql',
-    params={
-        "schema_name":schema_name,
-        "ds":'{{ ds }}'
-    },
-    postgres_conn_id="redshift",
-    autocommit=True
 )
 
 # Load Fact and Dimension tables
@@ -171,11 +128,6 @@ load_subreddit_dimension_table = RedshiftOperator(
     autocommit=True
 )
 
-dim_complete = DummyOperator(
-    task_id='dim_tables_complete',
-    dag=dag
-)
-
 load_fact_table = RedshiftOperator(
     task_id='load_fact_table',
     dag=dag,
@@ -189,6 +141,63 @@ load_fact_table = RedshiftOperator(
 )
 
 # Data quality tests
+creators_snapshot_table_quality_checks = DataQualityOperator(
+    task_id='creator_snapshot_table_quality_checks',
+    dag=dag,
+    redshift_conn_id="redshift",
+    query_checks=
+    [
+        {
+            'query': "SELECT COUNT(*) "
+                     "FROM {{ params.schema_name }}.creators_snapshot "
+                     "WHERE snapshot_date = '{{ ds }}'",
+            'operation':'>',
+            'value':0
+        }
+    ],
+    params={
+        "schema_name":schema_name,
+    },
+)
+
+posts_snapshot_table_quality_checks = DataQualityOperator(
+    task_id='posts_snapshot_table_quality_checks',
+    dag=dag,
+    redshift_conn_id="redshift",
+    query_checks=
+    [
+        {
+            'query': "SELECT COUNT(*) "
+                     "FROM {{ params.schema_name }}.posts_snapshot "
+                     "WHERE snapshot_date = '{{ ds }}'",
+            'operation':'>',
+            'value':0
+        }
+    ],
+    params={
+        "schema_name":schema_name,
+    },
+)
+
+subreddits_snapshot_table_quality_checks = DataQualityOperator(
+    task_id='subreddits_snapshot_table_quality_checks',
+    dag=dag,
+    redshift_conn_id="redshift",
+    query_checks=
+    [
+        {
+            'query': "SELECT COUNT(*) "
+                     "FROM {{ params.schema_name }}.subreddits_snapshot "
+                     "WHERE snapshot_date = '{{ ds }}'",
+            'operation':'>',
+            'value':0
+        }
+    ],
+    params={
+        "schema_name":schema_name,
+    },
+)
+
 creator_dimension_table_quality_checks = DataQualityOperator(
     task_id='creator_dimension_table_quality_checks',
     dag=dag,
@@ -196,12 +205,15 @@ creator_dimension_table_quality_checks = DataQualityOperator(
     query_checks=
     [
         {
-            'query': 'SELECT COUNT(*) FROM {{ params.schema_name }}.creators_d WHERE creator_id is Null',
+            'query': 'SELECT COUNT(*) '
+                     'FROM {{ params.schema_name }}.creators_d '
+                     'WHERE creator_id is Null',
             'operation':'=',
             'value':0
         },
         {
-            'query': 'SELECT COUNT(*) FROM {{ params.schema_name }}.creators_d',
+            'query': 'SELECT COUNT(*) '
+                     'FROM {{ params.schema_name }}.creators_d',
             'operation':'>',
             'value':0
         }
@@ -218,12 +230,15 @@ posts_dimension_table_quality_checks = DataQualityOperator(
     query_checks=
     [
         {
-            'query': 'SELECT COUNT(*) FROM {{ params.schema_name }}.post_d WHERE post_id is Null',
+            'query': 'SELECT COUNT(*) '
+                     'FROM {{ params.schema_name }}.posts_d '
+                     'WHERE post_id is Null',
             'operation':'=',
             'value':0
         },
         {
-            'query': 'SELECT COUNT(*) FROM {{ params.schema_name }}.post_d',
+            'query': 'SELECT COUNT(*) '
+                     'FROM {{ params.schema_name }}.posts_d',
             'operation':'>',
             'value':0
         }
@@ -240,12 +255,15 @@ subreddit_dimension_table_quality_checks = DataQualityOperator(
     query_checks=
     [
         {
-            'query': 'SELECT COUNT(*) FROM {{ params.schema_name }}.subreddit_d WHERE subreddit_id is Null',
+            'query': 'SELECT COUNT(*) '
+                     'FROM {{ params.schema_name }}.subreddits_d '
+                     'WHERE subreddit_id is Null',
             'operation':'=',
             'value':0
         },
         {
-            'query': 'SELECT COUNT(*) FROM {{ params.schema_name }}.subreddit_d',
+            'query': 'SELECT COUNT(*) '
+                     'FROM {{ params.schema_name }}.subreddits_d',
             'operation':'>',
             'value':0
         }
@@ -262,13 +280,18 @@ fact_table_quality_checks = DataQualityOperator(
     query_checks=
     [
         {
-            'query': 'SELECT COUNT(*) FROM {{ params.schema_name }}.reddit_fact '
-                     'WHERE (subreddit_id is Null or post_id is Null or creator_id is Null)',
+            'query': 'SELECT COUNT(*) '
+                     'FROM {{ params.schema_name }}.reddit_fact '
+                     'WHERE (subreddit_id is Null OR '
+                     'post_id is Null OR '
+                     'creator_id is Null)',
             'operation':'=',
             'value':0
         },
         {
-            'query': "SELECT COUNT(*) FROM {{ params.schema_name }}.reddit_fact where dt = '{{ ds }}'",
+            'query': "SELECT COUNT(*) "
+                     "FROM {{ params.schema_name }}.reddit_fact "
+                     "WHERE dt = '{{ ds }}'",
             'operation':'>',
             'value':0
         }
@@ -285,24 +308,31 @@ end_operator = DummyOperator(
 
 # Build DAG graph
 start_operator >> \
-create_schema >> \
-reddit_data_sensor >> \
-create_stagging_table >> \
-stage_reddit_data >> \
-load_reddit_data
+reddit_data_sensor \
 
-load_reddit_data >> [load_creator_snapshot_table,
+reddit_data_sensor>> [load_creator_snapshot_table,
                      load_posts_snapshot_table,
                      load_subreddit_snapshot_table]
 
-load_creator_snapshot_table >> load_creator_dimension_table >> creator_dimension_table_quality_checks
+load_creator_snapshot_table >> \
+creators_snapshot_table_quality_checks >> \
+load_creator_dimension_table >> \
+creator_dimension_table_quality_checks
 
-load_posts_snapshot_table >> load_posts_dimension_table >> posts_dimension_table_quality_checks
+load_posts_snapshot_table >> \
+posts_snapshot_table_quality_checks >> \
+load_posts_dimension_table >> \
+posts_dimension_table_quality_checks
 
-load_subreddit_snapshot_table >> load_subreddit_dimension_table >> subreddit_dimension_table_quality_checks
+load_subreddit_snapshot_table >> \
+subreddits_snapshot_table_quality_checks >> \
+load_subreddit_dimension_table >> \
+subreddit_dimension_table_quality_checks
 
 [creator_dimension_table_quality_checks,
  posts_dimension_table_quality_checks,
- subreddit_dimension_table_quality_checks] >> dim_complete
+ subreddit_dimension_table_quality_checks] >> load_fact_table
 
-dim_complete >> load_fact_table >> fact_table_quality_checks >> end_operator
+load_fact_table >> \
+fact_table_quality_checks >> \
+end_operator

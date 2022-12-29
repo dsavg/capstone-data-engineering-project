@@ -5,7 +5,7 @@ The goal of this project is to create a Data Warehouse to analyze trending world
 
 The project uses the Reddit API to get the top 50 trending world news subreddits and stores them on AWS S3 in JSON format. 
 Next, data processing happens on an EMR cluster on AWS using PySpark and processed data gets stored on AWS S3 in parquet format. 
-Finally, the data gets inserted into AWS Redshift and normalized creating fact and dimension tables.
+Finally, the data gets inserted into AWS Redshift and denormalize creating fact and dimension tables.
 
 ## Table of Content
 [2. Datawarehouse Architecture](https://github.com/dsavg/capstone-data-engineering-project#2-datawarehouse-architecture)
@@ -21,7 +21,8 @@ Finally, the data gets inserted into AWS Redshift and normalized creating fact a
 [4.2. Custom Operators](https://github.com/dsavg/capstone-data-engineering-project#42-custom-operators)  
 [5. Data Model](https://github.com/dsavg/capstone-data-engineering-project#5-data-model)  
 [6. S3 Data Storage](https://github.com/dsavg/capstone-data-engineering-project#6-s3-data-storage)
-[7. Resources](https://github.com/dsavg/capstone-data-engineering-project#7-resources)
+[7. Data Justifications](https://github.com/dsavg/capstone-data-engineering-project#7-data-justifications)
+[8. Resources](https://github.com/dsavg/capstone-data-engineering-project#8-resources)
 
 ## 2. Datawarehouse Architecture
 ![img0](imgs/datawarehouse_architecture.png)
@@ -180,7 +181,51 @@ Here is the s3 bucket `reddit-project-data` file structure
 
 ![img8](imgs/s3_parquet.png)
 
-## 7. Resources
+## 7. Data Justifications
+This sections addresses a few write up justifications as requested per Udacity's rubric.  
+
+**Scenarios**
+* The data was increased by 100x.  
+
+    Since we are managing the amount of responses we are getting from the Reddit API, an increase 
+by 100x of the data should be caused by someone manually increasing the limit of requests. In that 
+case, S3 should be able to easily handle the increase, since the data is already partitioned by 
+date. The EMR cluster can easily be scaled up in order to handle the increase in the data volume. 
+Finally, if a degraded performance is observed on the Redshift cluster, we can increase the node 
+size and the number of nodes.
+
+* The pipelines would be run on a daily basis by 7 am every day.
+
+    There is a cron expression for all DAGs to get triggered at 7am PST every day. Since data 
+sensors are put in place in the DAGs, they will only run after their dependencies are complete
+and not in parallel.
+
+* The database needed to be accessed by 100+ people.
+
+    The Redshift Cluster can be configured to handle 100+ users with concurrent query requests. 
+  
+**Additional Justifications**
+* Technology used justification  
+
+    * Airflow: open source and easy to configure.   
+    * AWS S3: scalable, performant, and secure data storage solution.   
+    * AWS EMR: great data processing solution, which is scalable and can be configured to use Spark and Hadoop.   
+    * PySpark: easy to process large data with Python.   
+    * AWS Redshift: relational database that is scalable and allows queries from multiple users    
+
+* Why do you use star schema? Does it have any advantage compared to other schemas?
+
+    A star schema is used for this project to denormalize subreddit data into a fact and 
+dimensions tables.
+
+* How often the data should be updated?  
+
+    The DAGs are scheduled to run on a daily basis. In case one updates the data manually, by triggering a 
+backfill for a given date, the original data will be overwritten. Note that in case
+the reddit_get_api_data DAG gets updated, the new data might differ from the original, since they represent
+a snapshot of the most popular subreddits at the time of the request. 
+
+## 8. Resources
 * https://towardsdatascience.com/run-airflow-docker-1b83a57616fb
 * https://www.startdataengineering.com/post/how-to-submit-spark-jobs-to-emr-cluster-from-airflow/
 * https://towardsdatascience.com/how-to-use-the-reddit-api-in-python-5e05ddfd1e5c

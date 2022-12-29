@@ -3,11 +3,13 @@ from operators.s3_partition_check import S3PartitionCheck
 from operators.stage_redshift import StageToRedshiftOperator
 from operators.data_quality import DataQualityOperator
 from operators.redshift_op import RedshiftOperator
+from operators.redshift_table_partition_check import RedshiftTableCheck
 
 __all__ = [
     'ReddittoS3Operator',
     'S3PartitionCheck',
     'StageToRedshiftOperator',
     'DataQualityOperator',
-    'RedshiftOperator'
+    'RedshiftOperator',
+    'RedshiftTableCheck'
 ]
